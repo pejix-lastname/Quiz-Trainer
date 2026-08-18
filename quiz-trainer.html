@@ -472,6 +472,7 @@
 
         <section class="row">
           <button class="good" id="startBtn">Avvia quiz</button>
+          <button class="secondary" id="exportBtn" disabled>Esporta CSV</button>
           <button class="secondary" id="resetBtn">Reset</button>
         </section>
 
@@ -517,6 +518,8 @@ Carica un CSV, poi avvia il quiz.
 
   <script>
 
+    // Raccoglie in un solo oggetto i riferimenti agli elementi della pagina usati dal JavaScript.
+    // In questo modo il codice evita di ripetere continuamente document.getElementById(...).
     const els = {
       fileInput: document.getElementById('fileInput'),
       pasteArea: document.getElementById('pasteArea'),
@@ -526,6 +529,7 @@ Carica un CSV, poi avvia il quiz.
       instantFeedback: document.getElementById('instantFeedback'),
       onlyWrongMode: document.getElementById('onlyWrongMode'),
       startBtn: document.getElementById('startBtn'),
+      exportBtn: document.getElementById('exportBtn'),
       resetBtn: document.getElementById('resetBtn'),
       questionCountBadge: document.getElementById('questionCountBadge'),
       statProgress: document.getElementById('statProgress'),
@@ -548,21 +552,41 @@ Carica un CSV, poi avvia il quiz.
       reviewBox: document.getElementById('reviewBox')
     };
 
-    let questionBank = [];
-    let quiz = [];
-    let currentIndex = 0;
-    let attempts = [];
-    let lastWrongQuestions = [];
-    let checkedCurrent = false;
+    // Un solo oggetto contiene tutto lo stato modificabile dell'applicazione.
+    // I dati delle domande restano invece immutabili dopo l'importazione.
+    const state = {
+      status: 'empty',
+      questionBank: [],
+      quiz: [],
+      currentIndex: 0,
+      attempts: [],
+      lastWrongQuestions: [],
+      checkedCurrent: false
+    };
 
+    /**
+     * Normalizza un valore testuale per confronti tolleranti.
+     * Converte null/undefined in stringa vuota, elimina gli spazi esterni,
+     * rimuove un eventuale BOM del CSV, comprime gli spazi consecutivi
+     * e trasforma tutto in minuscolo.
+     */
     function norm(s) {
-      return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      return String(s ?? '').replace(/^\uFEFF/, '').trim().replace(/\s+/g, ' ').toLowerCase();
     }
 
+    /**
+     * Converte i caratteri HTML pericolosi nelle rispettive entità.
+     * Serve quando una stringa proveniente dal CSV viene inserita tramite innerHTML,
+     * evitando che venga interpretata come markup o script eseguibile.
+     */
     function escapeHtml(s) {
       return String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
     }
 
+    /**
+     * Restituisce una nuova copia dell'array con gli elementi in ordine casuale.
+     * Usa l'algoritmo Fisher-Yates e non modifica l'array ricevuto.
+     */
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -572,6 +596,10 @@ Carica un CSV, poi avvia il quiz.
       return a;
     }
 
+    /**
+     * Divide un campo CSV contenente più valori separati da "||".
+     * Ripulisce ogni valore e rimuove le parti vuote.
+     */
     function splitMulti(s) {
       return String(s || '')
         .split('||')
@@ -579,6 +607,11 @@ Carica un CSV, poi avvia il quiz.
         .filter(Boolean);
     }
 
+    /**
+     * Analizza manualmente il testo CSV e restituisce una matrice di righe e celle.
+     * Gestisce il delimitatore configurabile, i campi racchiusi tra virgolette,
+     * le virgolette doppie di escape e le nuove righe presenti nei campi quotati.
+     */
     function parseCSV(text, delimiter = ';') {
       const rows = [];
       let row = [];
@@ -600,12 +633,94 @@ Carica un CSV, poi avvia il quiz.
           else { field += c; }
         }
       }
+      if (inQuotes) throw new Error('CSV non valido: campo con virgolette non chiuse.');
       row.push(field);
       rows.push(row);
       return rows.filter(r => r.some(cell => String(cell).trim() !== ''));
     }
 
-    function csvToQuestions(text) {
+    /**
+     * Converte un valore singolo, una stringa con "||" o un array in una lista
+     * uniforme di stringhe non vuote.
+     */
+    function toStringList(value) {
+      const values = Array.isArray(value) ? value : splitMulti(value);
+      return values.map(item => String(item ?? '').trim()).filter(Boolean);
+    }
+
+    /**
+     * Adatta e valida una domanda proveniente da qualsiasi formato.
+     * Restituisce un oggetto immutabile e sostituisce le risposte corrette
+     * con il testo esatto dell'opzione corrispondente.
+     */
+    function normalizeQuestion(raw, position = 'Domanda') {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        throw new Error(`${position}: deve essere un oggetto.`);
+      }
+
+      const question = String(raw.question ?? '').trim();
+      const source = String(raw.source ?? '').trim() || 'Quiz';
+      const explanation = String(raw.explanation ?? '').trim();
+      const options = toStringList(raw.options);
+      const suppliedCorrect = toStringList(raw.correct);
+      const errors = [];
+
+      if (!question) errors.push('testo della domanda mancante.');
+      if (options.length < 2) errors.push('servono almeno due opzioni.');
+      if (!suppliedCorrect.length) errors.push('risposta corretta mancante.');
+
+      const normalizedOptions = options.map(norm);
+      if (new Set(normalizedOptions).size !== normalizedOptions.length) {
+        errors.push('sono presenti opzioni duplicate.');
+      }
+
+      const canonicalCorrect = [];
+      for (const answer of suppliedCorrect) {
+        const optionIndex = normalizedOptions.indexOf(norm(answer));
+        if (optionIndex === -1) {
+          errors.push(`la risposta corretta “${answer}” non compare tra le opzioni.`);
+        } else {
+          canonicalCorrect.push(options[optionIndex]);
+        }
+      }
+      if (new Set(canonicalCorrect.map(norm)).size !== canonicalCorrect.length) {
+        errors.push('sono presenti risposte corrette duplicate.');
+      }
+
+      if (errors.length) throw new Error(`${position}: ${errors.join(' ')}`);
+
+      return Object.freeze({
+        id: raw.id ? String(raw.id) : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
+        source,
+        question,
+        options: Object.freeze(options),
+        correct: Object.freeze(canonicalCorrect),
+        explanation
+      });
+    }
+
+    /**
+     * Normalizza un elenco di elementi senza bloccare l'intero import per una
+     * singola riga errata. Restituisce separatamente domande valide ed errori.
+     */
+    function normalizeQuestions(items) {
+      const questions = [];
+      const errors = [];
+      for (const item of items) {
+        try {
+          questions.push(normalizeQuestion(item.data, item.position));
+        } catch (error) {
+          errors.push(error.message);
+        }
+      }
+      return { questions, errors };
+    }
+
+    /**
+     * Converte le righe CSV in elementi grezzi con indicazione della riga.
+     * La normalizzazione comune viene effettuata successivamente.
+     */
+    function csvToRawQuestions(text) {
       const rows = parseCSV(text);
       if (!rows.length) return [];
       const header = rows[0].map(h => norm(h));
@@ -614,22 +729,23 @@ Carica un CSV, poi avvia il quiz.
 
       const idx = name => hasHeader ? header.indexOf(name) : ({ source: 0, question: 1, options: 2, correct: 3, explanation: 4 }[name]);
 
-      const questions = dataRows.map((r, n) => {
-        const q = {
-          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-          source: (r[idx('source')] || '').trim() || 'Quiz',
-          question: (r[idx('question')] || '').trim(),
-          options: splitMulti(r[idx('options')]),
-          correct: splitMulti(r[idx('correct')]),
-          explanation: (r[idx('explanation')] || '').trim()
-        };
-        if (!q.question || q.options.length < 2 || q.correct.length < 1) return null;
-        return q;
-      }).filter(Boolean);
-
-      return questions;
+      return dataRows.map((r, index) => ({
+        position: `Riga ${index + (hasHeader ? 2 : 1)}`,
+        data: {
+          source: r[idx('source')],
+          question: r[idx('question')],
+          options: r[idx('options')],
+          correct: r[idx('correct')],
+          explanation: r[idx('explanation')]
+        }
+      }));
     }
 
+    /**
+     * Serializza il modello interno delle domande in CSV.
+     * Quota ogni campo, raddoppia le virgolette interne e unisce opzioni/risposte con "||".
+     * Il risultato viene usato dal pulsante "Esporta CSV".
+     */
     function questionsToCSV(questions) {
       const quote = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
       const lines = ['source;question;options;correct;explanation'];
@@ -645,40 +761,74 @@ Carica un CSV, poi avvia il quiz.
       return lines.join('\n');
     }
 
-    function loadQuestions(questions) {
-      questionBank = questions;
-      localStorage.setItem('quizTrainerQuestions', JSON.stringify(questionBank));
-      updateCount();
-      showEmpty(`Caricate ${questionBank.length} domande. Premi “Avvia quiz”.`);
+    /**
+     * Salva il database delle domande nel browser. Un eventuale errore di quota
+     * non interrompe il quiz, ma viene restituito come avviso leggibile.
+     */
+    function persistQuestions() {
+      try {
+        localStorage.setItem('quizTrainerQuestions', JSON.stringify(state.questionBank));
+        return '';
+      } catch {
+        return ' Le domande funzionano, ma non è stato possibile salvarle nel browser.';
+      }
     }
 
+    /**
+     * Sostituisce il database corrente, lo salva e mostra sia il risultato
+     * dell'importazione sia le eventuali righe scartate dalla validazione.
+     */
+    function loadQuestions(questions, validationErrors = []) {
+      state.questionBank = questions;
+      state.quiz = [];
+      state.currentIndex = 0;
+      state.attempts = [];
+      state.lastWrongQuestions = [];
+      state.checkedCurrent = false;
+      const storageWarning = persistQuestions();
+      updateCount();
+      resetStats();
+      const validationWarning = validationErrors.length
+        ? ` ${validationErrors.length === 1 ? 'Ignorata 1 riga non valida' : `Ignorate ${validationErrors.length} righe non valide`}: ${validationErrors.slice(0, 3).join(' | ')}${validationErrors.length > 3 ? ' | …' : ''}`
+        : '';
+      const loadedLabel = state.questionBank.length === 1 ? 'Caricata 1 domanda.' : `Caricate ${state.questionBank.length} domande.`;
+      setScreen('ready', `${loadedLabel} Premi “Avvia quiz”.${validationWarning}${storageWarning}`);
+    }
+
+    /**
+     * Importa domande da una stringa.
+     * Se il testo inizia con "[" o "{" prova a leggerlo come JSON; in tutti gli
+     * altri casi lo tratta come CSV. Alla fine valida il risultato e lo carica.
+     */
     function loadFromText(text) {
-      let questions;
+      let items;
       const trimmed = text.trim();
       if (!trimmed) throw new Error('Testo vuoto.');
       if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
         const parsed = JSON.parse(trimmed);
-        questions = Array.isArray(parsed) ? parsed : parsed.questions;
-        if (!Array.isArray(questions)) throw new Error('JSON non valido: serve un array o { questions: [...] }.');
-        questions = questions.map(q => ({
-          id: q.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
-          source: q.source || 'Quiz',
-          question: q.question,
-          options: Array.isArray(q.options) ? q.options : splitMulti(q.options),
-          correct: Array.isArray(q.correct) ? q.correct : splitMulti(q.correct),
-          explanation: q.explanation || ''
-        })).filter(q => q.question && q.options?.length >= 2 && q.correct?.length >= 1);
+        const rawQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
+        if (!Array.isArray(rawQuestions)) throw new Error('JSON non valido: serve un array o { questions: [...] }.');
+        items = rawQuestions.map((data, index) => ({ data, position: `Elemento JSON ${index + 1}` }));
       } else {
-        questions = csvToQuestions(trimmed);
+        items = csvToRawQuestions(trimmed);
       }
-      if (!questions.length) throw new Error('Nessuna domanda valida trovata. Controlla colonne e separatori.');
-      loadQuestions(questions);
+      const { questions, errors } = normalizeQuestions(items);
+      if (!questions.length) {
+        const details = errors.slice(0, 3).join(' | ');
+        throw new Error(`Nessuna domanda valida trovata.${details ? ' ' + details : ' Controlla colonne e separatori.'}`);
+      }
+      loadQuestions(questions, errors);
     }
 
+    /** Aggiorna il badge che mostra quante domande sono state caricate. */
     function updateCount() {
-      els.questionCountBadge.textContent = `${questionBank.length} domande caricate`;
+      const count = state.questionBank.length;
+      els.questionCountBadge.textContent = count === 1 ? '1 domanda caricata' : `${count} domande caricate`;
+      els.startBtn.disabled = count === 0;
+      els.exportBtn.disabled = count === 0;
     }
 
+    /** Riporta a zero contatori e barra di avanzamento visibili. */
     function resetStats() {
       els.statProgress.textContent = '0/0';
       els.statCorrect.textContent = '0';
@@ -687,39 +837,72 @@ Carica un CSV, poi avvia il quiz.
       els.progressBar.style.width = '0%';
     }
 
-    function updateStats() {
-      const total = quiz.length;
+    /** Calcola tutte le statistiche con una sola scansione dei tentativi. */
+    function calculateStats(attempts) {
+      const correct = attempts.reduce((count, attempt) => count + Number(attempt.isCorrect), 0);
       const done = attempts.length;
-      const correct = attempts.filter(a => a.isCorrect).length;
-      const wrong = attempts.filter(a => !a.isCorrect).length;
-      const pct = done ? Math.round((correct / done) * 100) : 0;
-      els.statProgress.textContent = `${Math.min(currentIndex + (checkedCurrent ? 1 : 0), total)}/${total}`;
+      return {
+        done,
+        correct,
+        wrong: done - correct,
+        pct: done ? Math.round((correct / done) * 100) : 0
+      };
+    }
+
+    /**
+     * Mostra progresso, risposte corrette, errori, percentuale e barra
+     * usando il risultato condiviso di calculateStats().
+     */
+    function updateStats() {
+      const total = state.quiz.length;
+      const { done, correct, wrong, pct } = calculateStats(state.attempts);
+      els.statProgress.textContent = `${Math.min(state.currentIndex + (state.checkedCurrent ? 1 : 0), total)}/${total}`;
       els.statCorrect.textContent = correct;
       els.statWrong.textContent = wrong;
       els.statScore.textContent = `${pct}%`;
       els.progressBar.style.width = total ? `${Math.round((done / total) * 100)}%` : '0%';
     }
 
-    function showEmpty(message) {
-      els.emptyState.textContent = message;
-      els.emptyState.classList.remove('hide');
-      els.quizBox.classList.add('hide');
-      els.resultBox.classList.add('hide');
+    /**
+     * Applica in un solo punto lo stato visivo dell'applicazione.
+     * Gli stati possibili sono empty, ready, playing e finished.
+     */
+    function setScreen(status, message = '') {
+      state.status = status;
+      const showMessage = status === 'empty' || status === 'ready';
+      els.emptyState.classList.toggle('hide', !showMessage);
+      els.quizBox.classList.toggle('hide', status !== 'playing');
+      els.resultBox.classList.toggle('hide', status !== 'finished');
+      if (showMessage && message) els.emptyState.textContent = message;
     }
 
+    /** Mostra un errore senza perdere le domande già caricate. */
+    function showImportError(message) {
+      setScreen(state.questionBank.length ? 'ready' : 'empty', message);
+    }
+
+    /**
+     * Avvia una nuova sessione.
+     * Può usare tutte le domande oppure soltanto quelle sbagliate nell'ultimo giro,
+     * applica l'eventuale ordine casuale e azzera lo stato dei tentativi.
+     */
     function startQuiz(useWrongOnly = false) {
-      const base = useWrongOnly ? lastWrongQuestions : (els.onlyWrongMode.checked && lastWrongQuestions.length ? lastWrongQuestions : questionBank);
+      const base = useWrongOnly
+        ? state.lastWrongQuestions
+        : (els.onlyWrongMode.checked && state.lastWrongQuestions.length ? state.lastWrongQuestions : state.questionBank);
       if (!base.length) {
-        showEmpty('Non ci sono domande da avviare. Carica un CSV prima.');
+        showImportError('Non ci sono domande da avviare. Carica un CSV prima.');
         return;
       }
-      quiz = els.shuffleQuestions.checked ? shuffle(base) : [...base];
-      currentIndex = 0;
-      attempts = [];
-      checkedCurrent = false;
-      els.emptyState.classList.add('hide');
-      els.resultBox.classList.add('hide');
-      els.quizBox.classList.remove('hide');
+      const orderedQuestions = els.shuffleQuestions.checked ? shuffle(base) : [...base];
+      state.quiz = orderedQuestions.map(question => Object.freeze({
+        question,
+        renderedOptions: Object.freeze(els.shuffleOptions.checked ? shuffle(question.options) : [...question.options])
+      }));
+      state.currentIndex = 0;
+      state.attempts = [];
+      state.checkedCurrent = false;
+      setScreen('playing');
       renderQuestion();
       updateStats();
       if (window.matchMedia('(max-width: 850px)').matches) {
@@ -727,52 +910,72 @@ Carica un CSV, poi avvia il quiz.
       }
     }
 
-    function currentQuestionPrepared() {
-      const q = quiz[currentIndex];
-      if (!q._renderOptions || q._shuffleFlag !== els.shuffleOptions.checked) {
-        q._renderOptions = els.shuffleOptions.checked ? shuffle(q.options) : [...q.options];
-        q._shuffleFlag = els.shuffleOptions.checked;
-      }
-      return q;
+    /** Restituisce l'elemento di sessione corrente senza modificare la domanda originale. */
+    function currentQuizItem() {
+      return state.quiz[state.currentIndex];
     }
 
+    /** Crea l'elemento HTML di una risposta senza usare stringhe HTML dinamiche. */
+    function createOptionElement(option, index, multi) {
+      const id = `opt_${state.currentIndex}_${index}`;
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      const text = document.createElement('span');
+      const letter = document.createElement('b');
+
+      label.className = 'option';
+      input.type = multi ? 'checkbox' : 'radio';
+      input.name = 'answer';
+      input.value = option;
+      input.id = id;
+      letter.textContent = `${String.fromCharCode(65 + index)}. `;
+      text.append(letter, document.createTextNode(option));
+      label.append(input, text);
+      return label;
+    }
+
+    /**
+     * Disegna nel DOM la domanda corrente e le relative opzioni.
+     * Sceglie radio button per risposta singola e checkbox per risposta multipla,
+     * collega l'evento change e ripristina feedback e pulsanti.
+     */
     function renderQuestion() {
-      checkedCurrent = false;
-      const q = currentQuestionPrepared();
+      state.checkedCurrent = false;
+      const item = currentQuizItem();
+      const q = item.question;
       const multi = q.correct.length > 1;
-      els.questionMeta.textContent = `${q.source || 'Quiz'} · domanda ${currentIndex + 1} di ${quiz.length}${multi ? ' · risposta multipla' : ''}`;
+      els.questionMeta.textContent = `${q.source || 'Quiz'} · domanda ${state.currentIndex + 1} di ${state.quiz.length}${multi ? ' · risposta multipla' : ''}`;
       els.questionText.textContent = q.question;
-      els.optionsBox.innerHTML = '';
+      els.optionsBox.replaceChildren();
       els.feedbackBox.className = 'feedback';
-      els.feedbackBox.innerHTML = '';
+      els.feedbackBox.replaceChildren();
+      els.nextBtn.textContent = els.instantFeedback.checked && multi ? 'Controlla' : 'Prossima';
       els.nextBtn.disabled = true;
 
-      q._renderOptions.forEach((opt, i) => {
-        const id = `opt_${currentIndex}_${i}`;
-        const label = document.createElement('label');
-        label.className = 'option';
-        label.innerHTML = `
-          <input type="${multi ? 'checkbox' : 'radio'}" name="answer" value="${escapeHtml(opt)}" id="${id}">
-          <span><b>${String.fromCharCode(65 + i)}.</b> ${escapeHtml(opt)}</span>
-        `;
-        const input = label.querySelector('input');
-        input.addEventListener('change', handleAnswerChange);
-        els.optionsBox.appendChild(label);
+      const fragment = document.createDocumentFragment();
+      item.renderedOptions.forEach((option, index) => {
+        fragment.appendChild(createOptionElement(option, index, multi));
       });
+      els.optionsBox.appendChild(fragment);
       updateStats();
     }
 
+    /** Restituisce i valori di tutte le opzioni attualmente selezionate. */
     function getSelectedAnswers() {
       return [...els.optionsBox.querySelectorAll('input[name="answer"]:checked')].map(x => x.value);
     }
 
+    /**
+     * Reagisce alla selezione o deselezione di un'opzione.
+     * Le risposte singole possono essere corrette automaticamente. Per quelle
+     * multiple abilita "Controlla", lasciando il tempo di modificare tutte le scelte.
+     */
     function handleAnswerChange() {
-      if (checkedCurrent) return;
+      if (state.checkedCurrent) return;
 
-      const q = currentQuestionPrepared();
+      const q = currentQuizItem().question;
       const selected = getSelectedAnswers();
       const hasSelection = selected.length > 0;
-      const hasEnoughForAutoCheck = q.correct.length === 1 || selected.length >= q.correct.length;
 
       if (!hasSelection) {
         els.nextBtn.disabled = true;
@@ -780,32 +983,51 @@ Carica un CSV, poi avvia il quiz.
       }
 
       if (els.instantFeedback.checked) {
-        // Feedback immediato: corregge da solo. Niente tasto "Controlla".
-        // Singola: corregge al primo click. Multipla: corregge appena selezioni il numero di risposte previsto.
-        els.nextBtn.disabled = !checkedCurrent;
-        if (!hasEnoughForAutoCheck) return;
-
-        window.setTimeout(() => {
-          if (!checkedCurrent) recordAnswer({ showFeedback: true });
-        }, 80);
+        if (q.correct.length === 1) {
+          // Per una risposta singola il click rappresenta già una scelta completa.
+          els.nextBtn.disabled = true;
+          window.setTimeout(() => {
+            if (!state.checkedCurrent) recordAnswer({ showFeedback: true });
+          }, 80);
+        } else {
+          // Nelle multiple l'utente decide quando ha finito premendo "Controlla".
+          els.nextBtn.disabled = false;
+        }
       } else {
-        // Feedback immediato spento: non mostra la correzione ora, ma ti lascia andare avanti.
-        // La risposta viene salvata quando premi "Prossima" o "Termina".
+        // La risposta verrà salvata quando si preme "Prossima" o "Termina".
         els.feedbackBox.className = 'feedback';
-        els.feedbackBox.innerHTML = '';
+        els.feedbackBox.replaceChildren();
         els.nextBtn.disabled = false;
       }
     }
 
+    /**
+     * Confronta due array come insiemi di stringhe normalizzate.
+     * L'ordine non conta, mentre devono coincidere numero e contenuto degli elementi.
+     */
     function sameSet(a, b) {
       const aa = a.map(norm).sort();
       const bb = b.map(norm).sort();
       return aa.length === bb.length && aa.every((v, i) => v === bb[i]);
     }
 
+    /** Crea il risultato di un tentativo senza leggere o modificare il DOM. */
+    function evaluateAnswer(question, selected) {
+      return Object.freeze({
+        question,
+        selected: Object.freeze([...selected]),
+        isCorrect: sameSet(selected, question.correct)
+      });
+    }
+
+    /**
+     * Registra la risposta corrente e ne calcola la correttezza.
+     * Se richiesto, colora le opzioni, blocca gli input e mostra soluzione e spiegazione.
+     * Restituisce false se non è stata selezionata alcuna risposta, true negli altri casi.
+     */
     function recordAnswer({ showFeedback = true } = {}) {
-      if (checkedCurrent) return true;
-      const q = currentQuestionPrepared();
+      if (state.checkedCurrent) return true;
+      const q = currentQuizItem().question;
       const selected = getSelectedAnswers();
       if (!selected.length) {
         els.feedbackBox.className = 'feedback no';
@@ -814,9 +1036,9 @@ Carica un CSV, poi avvia il quiz.
         return false;
       }
 
-      const isCorrect = sameSet(selected, q.correct);
-      checkedCurrent = true;
-      attempts.push({ question: q, selected, isCorrect });
+      const attempt = evaluateAnswer(q, selected);
+      state.checkedCurrent = true;
+      state.attempts.push(attempt);
 
       if (showFeedback) {
         const correctNorm = new Set(q.correct.map(norm));
@@ -826,56 +1048,61 @@ Carica un CSV, poi avvia il quiz.
           const n = norm(val);
           if (correctNorm.has(n)) label.classList.add('correct');
           if (selectedNorm.has(n) && !correctNorm.has(n)) label.classList.add('wrong');
-          if (!selectedNorm.has(n) && correctNorm.has(n) && !isCorrect) label.classList.add('missed');
+          if (!selectedNorm.has(n) && correctNorm.has(n) && !attempt.isCorrect) label.classList.add('missed');
           label.querySelector('input').disabled = true;
         });
 
-        els.feedbackBox.className = 'feedback ' + (isCorrect ? 'ok' : 'no');
+        els.feedbackBox.className = 'feedback ' + (attempt.isCorrect ? 'ok' : 'no');
         els.feedbackBox.innerHTML = `
-          <b>${isCorrect ? 'Corretto.' : 'Sbagliato.'}</b>
+          <b>${attempt.isCorrect ? 'Corretto.' : 'Sbagliato.'}</b>
           <div class="answerLine"><b>Risposta corretta:</b> ${q.correct.map(escapeHtml).join(' + ')}</div>
           ${q.explanation ? `<div class="answerLine"><b>Spiegazione:</b> ${escapeHtml(q.explanation)}</div>` : ''}
         `;
       }
 
+      els.nextBtn.textContent = 'Prossima';
       els.nextBtn.disabled = false;
       updateStats();
       return true;
     }
 
+    /**
+     * Gestisce il pulsante "Prossima" e il tasto Invio.
+     * Prima salva una risposta non ancora registrata, poi avanza alla domanda seguente
+     * oppure termina il quiz se si trova sull'ultima.
+     */
     function nextQuestion() {
-      if (!checkedCurrent) {
+      if (!state.checkedCurrent) {
         const saved = recordAnswer({ showFeedback: els.instantFeedback.checked });
         if (!saved) return;
 
-        // Se il feedback immediato è attivo e la risposta è stata corretta ora tramite Invio,
-        // resta sulla domanda per permettere di vedere il risultato. Poi "Prossima" avanza.
+        // Con feedback immediato il primo click corregge, il secondo avanza.
         if (els.instantFeedback.checked) return;
       }
 
-      if (currentIndex < quiz.length - 1) {
-        currentIndex++;
+      if (state.currentIndex < state.quiz.length - 1) {
+        state.currentIndex++;
         renderQuestion();
       } else {
         finishQuiz();
       }
     }
 
+    /**
+     * Chiude la sessione, calcola il riepilogo finale, salva le domande sbagliate
+     * per il ripasso e mostra la revisione dettagliata dei tentativi.
+     */
     function finishQuiz() {
-      if (quiz.length && !checkedCurrent && currentIndex < quiz.length && !els.instantFeedback.checked && getSelectedAnswers().length) {
+      // Registra anche una risposta multipla parziale se l'utente termina subito.
+      if (state.quiz.length && !state.checkedCurrent && state.currentIndex < state.quiz.length && getSelectedAnswers().length) {
         recordAnswer({ showFeedback: false });
       }
-      els.quizBox.classList.add('hide');
-      els.resultBox.classList.remove('hide');
-      els.emptyState.classList.add('hide');
+      setScreen('finished');
 
-      const done = attempts.length;
-      const correct = attempts.filter(a => a.isCorrect).length;
-      const wrong = attempts.filter(a => !a.isCorrect).length;
-      const pct = done ? Math.round((correct / done) * 100) : 0;
-      lastWrongQuestions = attempts.filter(a => !a.isCorrect).map(a => a.question);
-      els.finalSummary.innerHTML = `Hai risposto a <b>${done}</b> domande su <b>${quiz.length}</b>. Corrette: <b>${correct}</b>. Sbagliate: <b>${wrong}</b>. Score: <b>${pct}%</b>.`;
-      els.wrongOnlyBtn.disabled = lastWrongQuestions.length === 0;
+      const { done, correct, wrong, pct } = calculateStats(state.attempts);
+      state.lastWrongQuestions = state.attempts.filter(attempt => !attempt.isCorrect).map(attempt => attempt.question);
+      els.finalSummary.innerHTML = `Hai risposto a <b>${done}</b> domande su <b>${state.quiz.length}</b>. Corrette: <b>${correct}</b>. Sbagliate: <b>${wrong}</b>. Score: <b>${pct}%</b>.`;
+      els.wrongOnlyBtn.disabled = state.lastWrongQuestions.length === 0;
       renderReview();
       updateStats();
       if (window.matchMedia('(max-width: 850px)').matches) {
@@ -883,13 +1110,18 @@ Carica un CSV, poi avvia il quiz.
       }
     }
 
+    /**
+     * Costruisce l'elenco finale di tutte le risposte registrate.
+     * Per ciascun tentativo mostra esito, risposta dell'utente, soluzione e spiegazione.
+     */
     function renderReview() {
-      els.reviewBox.innerHTML = '';
-      if (!attempts.length) {
+      els.reviewBox.replaceChildren();
+      if (!state.attempts.length) {
         els.reviewBox.innerHTML = '<div class="empty">Nessuna risposta registrata.</div>';
         return;
       }
-      attempts.forEach((a, i) => {
+      const fragment = document.createDocumentFragment();
+      state.attempts.forEach((a, i) => {
         const div = document.createElement('div');
         div.className = 'reviewItem ' + (a.isCorrect ? 'goodborder' : 'badborder');
         div.innerHTML = `
@@ -900,10 +1132,15 @@ Carica un CSV, poi avvia il quiz.
           <p><b>Corretta:</b> ${a.question.correct.map(escapeHtml).join(' + ')}</p>
           ${a.question.explanation ? `<p class="tiny"><b>Spiegazione:</b> ${escapeHtml(a.question.explanation)}</p>` : ''}
         `;
-        els.reviewBox.appendChild(div);
+        fragment.appendChild(div);
       });
+      els.reviewBox.appendChild(fragment);
     }
 
+    /**
+     * Crea e scarica dal browser un file generato in memoria tramite Blob.
+     * Viene utilizzata dal pulsante "Esporta CSV".
+     */
     function downloadFile(name, content, type = 'text/plain') {
       const blob = new Blob([content], { type });
       const url = URL.createObjectURL(blob);
@@ -913,14 +1150,21 @@ Carica un CSV, poi avvia il quiz.
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     }
 
-    els.loadPasteBtn.addEventListener('click', () => {
-      try { loadFromText(els.pasteArea.value); }
-      catch (e) { showEmpty('Errore caricamento: ' + e.message); }
+    // Un solo listener sul contenitore gestisce tutte le opzioni presenti e future.
+    els.optionsBox.addEventListener('change', event => {
+      if (event.target.matches('input[name="answer"]')) handleAnswerChange();
     });
 
+    // Importa il contenuto incollato nel textarea e mostra un errore leggibile se non è valido.
+    els.loadPasteBtn.addEventListener('click', () => {
+      try { loadFromText(els.pasteArea.value); }
+      catch (e) { showImportError('Errore caricamento: ' + e.message); }
+    });
+
+    // Legge in modo asincrono il file scelto, ne copia il contenuto nel textarea e lo importa.
     els.fileInput.addEventListener('change', async (ev) => {
       const file = ev.target.files[0];
       if (!file) return;
@@ -929,26 +1173,48 @@ Carica un CSV, poi avvia il quiz.
         els.pasteArea.value = text;
         loadFromText(text);
       } catch (e) {
-        showEmpty('Errore file: ' + e.message);
+        showImportError('Errore file: ' + e.message);
       }
     });
 
+    // Collega i pulsanti principali alle rispettive operazioni.
     els.startBtn.addEventListener('click', () => startQuiz(false));
+    els.exportBtn.addEventListener('click', () => {
+      const csv = '\uFEFF' + questionsToCSV(state.questionBank);
+      downloadFile('quiz-trainer-export.csv', csv, 'text/csv;charset=utf-8');
+    });
+
+    // Il reset elimina stato in memoria e domande persistenti, quindi ripristina l'interfaccia.
     els.resetBtn.addEventListener('click', () => {
-      questionBank = [];
-      quiz = [];
-      attempts = [];
-      lastWrongQuestions = [];
-      localStorage.removeItem('quizTrainerQuestions');
+      state.questionBank = [];
+      state.quiz = [];
+      state.currentIndex = 0;
+      state.attempts = [];
+      state.lastWrongQuestions = [];
+      state.checkedCurrent = false;
+      els.pasteArea.value = '';
+      els.fileInput.value = '';
+      try { localStorage.removeItem('quizTrainerQuestions'); } catch { /* storage non disponibile */ }
       updateCount();
       resetStats();
-      showEmpty('Reset fatto. Carica un CSV, poi avvia il quiz.');
+      setScreen('empty', 'Reset fatto. Carica un CSV, poi avvia il quiz.');
     });
     els.nextBtn.addEventListener('click', nextQuestion);
     els.finishBtn.addEventListener('click', finishQuiz);
     els.restartBtn.addEventListener('click', () => startQuiz(false));
     els.wrongOnlyBtn.addEventListener('click', () => startQuiz(true));
 
+    // Se l'impostazione cambia durante una risposta multipla, aggiorna subito il pulsante.
+    els.instantFeedback.addEventListener('change', () => {
+      if (state.status !== 'playing' || state.checkedCurrent) return;
+      const item = currentQuizItem();
+      if (!item) return;
+      const multi = item.question.correct.length > 1;
+      els.nextBtn.textContent = els.instantFeedback.checked && multi ? 'Controlla' : 'Prossima';
+      els.nextBtn.disabled = getSelectedAnswers().length === 0;
+    });
+
+    // Scorciatoie: i tasti 1-9 selezionano un'opzione, Invio salva/avanza.
     document.addEventListener('keydown', (e) => {
       if (els.quizBox.classList.contains('hide')) return;
       if (/^[1-9]$/.test(e.key)) {
@@ -965,19 +1231,39 @@ Carica un CSV, poi avvia il quiz.
       }
     });
 
+    /**
+     * Inizializzazione eseguita immediatamente al caricamento della pagina.
+     * Azzera le statistiche e tenta di ripristinare dal localStorage le domande
+     * precedentemente importate nello stesso browser.
+     */
     (function init() {
       resetStats();
       try {
         const saved = JSON.parse(localStorage.getItem('quizTrainerQuestions') || '[]');
         if (Array.isArray(saved) && saved.length) {
-          questionBank = saved;
+          const items = saved.map((data, index) => ({ data, position: `Domanda salvata ${index + 1}` }));
+          const { questions, errors } = normalizeQuestions(items);
+          state.questionBank = questions;
           updateCount();
-          showEmpty(`Ripristinate ${questionBank.length} domande salvate nel browser. Premi “Avvia quiz”.`);
+          if (questions.length) {
+            const warning = errors.length
+              ? ` ${errors.length === 1 ? 'Ignorata 1 domanda salvata non valida.' : `Ignorate ${errors.length} domande salvate non valide.`}`
+              : '';
+            const restoredLabel = questions.length === 1
+              ? 'Ripristinata 1 domanda salvata nel browser.'
+              : `Ripristinate ${questions.length} domande salvate nel browser.`;
+            setScreen('ready', `${restoredLabel} Premi “Avvia quiz”.${warning}`);
+          } else {
+            setScreen('empty', 'Le domande salvate non sono valide. Carica nuovamente il CSV.');
+          }
         } else {
           updateCount();
-          showEmpty('Carica un CSV, poi avvia il quiz.');
+          setScreen('empty', 'Carica un CSV, poi avvia il quiz.');
         }
-      } catch { updateCount(); }
+      } catch {
+        updateCount();
+        setScreen('empty', 'Non è stato possibile leggere le domande salvate. Carica nuovamente il CSV.');
+      }
     })();
   </script>
 </body>

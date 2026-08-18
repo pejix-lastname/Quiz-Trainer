@@ -6,7 +6,7 @@ Quiz Trainer è una semplice applicazione in HTML per esercitarsi con quiz a ris
 
 ### Come usarlo
 
-1. Apri il file `index.html` con un doppio click.
+1. Apri il file `quiz-trainer.html` con un doppio click.
 2. Carica il file CSV con le domande.
 3. Seleziona le impostazioni che preferisci tramite i checkbox disponibili.
 4. Avvia il quiz e inizia ad allenarti.
@@ -32,7 +32,7 @@ Quiz Trainer is a simple HTML application for practicing single-choice or multip
 
 ### How to use it
 
-1. Open the `index.html` file with a double click.
+1. Open the `quiz-trainer.html` file with a double click.
 2. Upload the CSV file containing the questions.
 3. Select the settings you prefer using the available checkboxes.
 4. Start the quiz and begin practicing.
@@ -58,7 +58,7 @@ Quiz Trainer est une application HTML simple permettant de s’entraîner avec d
 
 ### Comment l’utiliser
 
-1. Ouvrez le fichier `index.html` avec un double-clic.
+1. Ouvrez le fichier `quiz-trainer.html` avec un double-clic.
 2. Chargez le fichier CSV contenant les questions.
 3. Sélectionnez les paramètres souhaités à l’aide des cases disponibles.
 4. Lancez le quiz et commencez à vous entraîner.
@@ -84,7 +84,7 @@ Quiz Trainer ist eine einfache HTML-Anwendung, mit der du Single-Choice- oder Mu
 
 ### Verwendung
 
-1. Öffne die Datei `index.html` mit einem Doppelklick.
+1. Öffne die Datei `quiz-trainer.html` mit einem Doppelklick.
 2. Lade die CSV-Datei mit den Fragen hoch.
 3. Wähle die gewünschten Einstellungen über die verfügbaren Checkboxen aus.
 4. Starte das Quiz und beginne mit dem Üben.
@@ -110,7 +110,7 @@ Quiz Trainer — это простое HTML-приложение для трен
 
 ### Как использовать
 
-1. Откройте файл `index.html` двойным щелчком.
+1. Откройте файл `quiz-trainer.html` двойным щелчком.
 2. Загрузите CSV-файл с вопросами.
 3. Выберите нужные настройки с помощью доступных чекбоксов.
 4. Запустите тест и начните тренировку.
@@ -136,7 +136,7 @@ Quiz Trainer es una aplicación HTML sencilla para practicar cuestionarios de re
 
 ### Cómo usarlo
 
-1. Abre el archivo `index.html` con doble clic.
+1. Abre el archivo `quiz-trainer.html` con doble clic.
 2. Sube el archivo CSV con las preguntas.
 3. Selecciona las opciones que prefieras mediante las casillas disponibles.
 4. Inicia el cuestionario y empieza a practicar.
