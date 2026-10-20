@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Quiz Trainer</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2718%27 fill=%27%23070707%27/%3E%3Ctext x=%2750%25%27 y=%2754%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27Arial,sans-serif%27 font-size=%2728%27 font-weight=%27800%27 fill=%27white%27%3EQT%3C/text%3E%3C/svg%3E" />
+
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2718%27 fill=%27%23070707%27/%3E%3Ctext x=%2750%25%27 y=%2754%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27Arial,sans-serif%27 font-size=%2728%27 font-weight=%27800%27 fill=%27white%27%3EQT%3C/text%3E%3C/svg%3E"
+  />
+
   <style>
     :root {
       color-scheme: light;
@@ -17,6 +23,8 @@
       --muted-strong: #5f5a56;
       --border: #e5e1dd;
       --black: #080808;
+      --on-black: #ffffff;
+      --switch-thumb: #ffffff;
       --success: #1d8a58;
       --success-bg: #ecf8f1;
       --danger: #ca4646;
@@ -30,6 +38,52 @@
       --radius-md: 16px;
       --radius-sm: 12px;
       --touch: 48px;
+    }
+
+    body.twilightTheme {
+      color-scheme: dark;
+      --bg: #1f2b49;
+      --surface: #293862;
+      --surface-soft: #314269;
+      --surface-muted: #354970;
+      --text: #f1f5ff;
+      --muted: #a8b5cc;
+      --muted-strong: #c4cee0;
+      --border: #465a7c;
+      --black: #9bb9ff;
+      --on-black: #15213a;
+      --switch-thumb: #172440;
+      --success: #74c69d;
+      --success-bg: #214d43;
+      --danger: #f08b93;
+      --danger-bg: #552d3b;
+      --warn: #e9c46a;
+      --warn-bg: #554821;
+      --shadow: 0 22px 60px rgba(5, 12, 29, .34);
+      --shadow-soft: 0 10px 28px rgba(5, 12, 29, .24);
+    }
+
+    body.darkTheme {
+      color-scheme: dark;
+      --bg: #111111;
+      --surface: #171717;
+      --surface-soft: #1d1d1d;
+      --surface-muted: #252525;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --muted-strong: #c8c8c8;
+      --border: #343434;
+      --black: #f3f3f3;
+      --on-black: #0b0b0b;
+      --switch-thumb: #111111;
+      --success: #56c58b;
+      --success-bg: #153326;
+      --danger: #f07878;
+      --danger-bg: #3a1d1d;
+      --warn: #e6b85c;
+      --warn-bg: #3a2d12;
+      --shadow: 0 22px 60px rgba(0, 0, 0, .34);
+      --shadow-soft: 0 10px 28px rgba(0, 0, 0, .24);
     }
 
     * { box-sizing: border-box; }
@@ -60,6 +114,267 @@
       pointer-events: none;
       background: linear-gradient(110deg, transparent 0 73%, rgba(0,0,0,.018) 73% 74%, transparent 74%);
       opacity: .7;
+    }
+
+    body.twilightTheme {
+      background:
+        radial-gradient(circle at 112% -7%, #4a5d82 0 14rem, transparent 14.1rem),
+        radial-gradient(circle at 82% 9%, rgba(46,63,99,.72) 0 8rem, transparent 8.1rem),
+        var(--bg);
+    }
+
+    body.twilightTheme::before {
+      background: linear-gradient(110deg, transparent 0 73%, rgba(146,174,222,.045) 73% 74%, transparent 74%);
+    }
+
+    body.darkTheme {
+      background:
+        radial-gradient(circle at 112% -7%, #f1f1f1 0 14rem, transparent 14.1rem),
+        radial-gradient(circle at 82% 9%, rgba(55,55,55,.94) 0 8rem, transparent 8.1rem),
+        var(--bg);
+    }
+
+    body.darkTheme::before {
+      background: linear-gradient(110deg, transparent 0 73%, rgba(255,255,255,.025) 73% 74%, transparent 74%);
+    }
+
+    .headerTools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .themeToggle {
+      position: relative;
+      width: 106px;
+      min-width: 106px;
+      height: 42px;
+      min-height: 42px;
+      padding: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: var(--shadow-soft);
+      color: var(--text);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    .themeToggle:hover {
+      transform: translateY(-1px);
+    }
+
+    .themeTrack {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+      padding: 0 3px;
+      pointer-events: none;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .themeTrack span {
+      display: grid;
+      place-items: center;
+      height: 100%;
+    }
+
+    .themeThumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: var(--black);
+      transition: transform .2s ease, background .2s ease;
+      box-shadow: 0 3px 10px rgba(0,0,0,.16);
+      pointer-events: none;
+    }
+
+    body.twilightTheme .themeThumb {
+      transform: translateX(32px);
+    }
+
+    body.darkTheme .themeThumb {
+      transform: translateX(64px);
+    }
+
+    body.twilightTheme .themeToggle {
+      background: rgba(41,56,98,.92);
+      border-color: rgba(180,202,240,.16);
+    }
+
+    body.darkTheme .themeToggle {
+      background: rgba(23,23,23,.82);
+      border-color: rgba(255,255,255,.08);
+    }
+
+    body.twilightTheme .card,
+    body.twilightTheme .badge {
+      background: rgba(41,56,98,.94);
+      border-color: rgba(181,201,235,.12);
+    }
+
+    body.twilightTheme aside section,
+    body.twilightTheme .stat,
+    body.twilightTheme .questionMeta,
+    body.twilightTheme .reviewItem,
+    body.twilightTheme .empty {
+      background: var(--surface-soft);
+    }
+
+    body.twilightTheme .questionLimitBox,
+    body.twilightTheme .checkline,
+    body.twilightTheme input[type="file"],
+    body.twilightTheme .option {
+      background: var(--surface);
+    }
+
+    body.twilightTheme input[type="file"]::file-selector-button {
+      background: #9bb9ff;
+      color: #15213a;
+    }
+
+    body.twilightTheme button.secondary {
+      background: #3a4c73;
+      color: var(--text);
+    }
+
+    body.twilightTheme button.warn {
+      background: #5a4d27;
+      color: #f5d77b;
+    }
+
+    body.twilightTheme .progressOuter {
+      background: #3a4b70;
+    }
+
+    body.twilightTheme .pill {
+      background: #3a4b72;
+      border-color: #4b5e83;
+      color: var(--muted-strong);
+    }
+
+    body.twilightTheme .sectionNote {
+      background: #34466d;
+      color: #bdc9dc;
+    }
+
+    body.twilightTheme textarea:focus,
+    body.twilightTheme input[type="text"]:focus,
+    body.twilightTheme input[type="number"]:focus,
+    body.twilightTheme select:focus {
+      background: #34486f;
+      border-color: #6d84aa;
+      box-shadow: 0 0 0 4px rgba(150,180,230,.08);
+    }
+
+    body.twilightTheme .option:hover {
+      background: #35486f;
+      border-color: #6a80a5;
+    }
+
+    body.twilightTheme .option input {
+      background: #243454;
+      border-color: #7186aa;
+    }
+
+    body.twilightTheme .option input:checked {
+      background: var(--black);
+      border-color: var(--black);
+    }
+
+    body.twilightTheme .empty {
+      background:
+        radial-gradient(circle at 50% 35%, #3a4d75 0 4rem, transparent 4.1rem),
+        var(--surface-soft);
+    }
+
+    body.darkTheme .card,
+    body.darkTheme .badge {
+      background: rgba(23,23,23,.96);
+      border-color: rgba(255,255,255,.07);
+    }
+
+    body.darkTheme aside section,
+    body.darkTheme .stat,
+    body.darkTheme .questionMeta,
+    body.darkTheme .reviewItem,
+    body.darkTheme .empty {
+      background: var(--surface-soft);
+    }
+
+    body.darkTheme .questionLimitBox,
+    body.darkTheme .checkline,
+    body.darkTheme input[type="file"],
+    body.darkTheme .option {
+      background: var(--surface);
+    }
+
+    body.darkTheme input[type="file"]::file-selector-button {
+      background: #f3f3f3;
+      color: #0b0b0b;
+    }
+
+    body.darkTheme button.secondary {
+      background: #2a2a2a;
+      color: var(--text);
+    }
+
+    body.darkTheme button.warn {
+      background: #3a2d12;
+      color: #f0c86b;
+    }
+
+    body.darkTheme .progressOuter {
+      background: #2c2c2c;
+    }
+
+    body.darkTheme .pill {
+      background: #2b2b2b;
+      border-color: #3a3a3a;
+      color: var(--muted-strong);
+    }
+
+    body.darkTheme .sectionNote {
+      background: #242424;
+      color: #b8b8b8;
+    }
+
+    body.darkTheme textarea:focus,
+    body.darkTheme input[type="text"]:focus,
+    body.darkTheme input[type="number"]:focus,
+    body.darkTheme select:focus {
+      background: #202020;
+      border-color: #555;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.05);
+    }
+
+    body.darkTheme .option:hover {
+      background: #202020;
+      border-color: #5d5d5d;
+    }
+
+    body.darkTheme .option input {
+      background: #1c1c1c;
+      border-color: #666;
+    }
+
+    body.darkTheme .option input:checked {
+      background: var(--black);
+      border-color: var(--black);
+    }
+
+    body.darkTheme .empty {
+      background:
+        radial-gradient(circle at 50% 35%, #262626 0 4rem, transparent 4.1rem),
+        var(--surface-soft);
     }
 
     .wrap {
@@ -99,7 +414,7 @@
       height: 30px;
       border-radius: 10px;
       background: var(--black);
-      color: #fff;
+      color: var(--on-black);
       font-size: .72rem;
       letter-spacing: -.02em;
     }
@@ -204,7 +519,10 @@
       font-weight: 700;
     }
 
-    textarea, input[type="text"], select {
+    textarea,
+    input[type="text"],
+    input[type="number"],
+    select {
       width: 100%;
       color: var(--text);
       background: var(--surface-muted);
@@ -217,7 +535,10 @@
       transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
 
-    textarea:focus, input[type="text"]:focus, select:focus {
+    textarea:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
       background: #fff;
       border-color: #cdc8c3;
       box-shadow: 0 0 0 4px rgba(0,0,0,.045);
@@ -249,9 +570,25 @@
       padding: 9px 12px;
       margin-right: 10px;
       background: var(--black);
-      color: #fff;
+      color: var(--on-black);
       font-weight: 800;
       cursor: pointer;
+    }
+
+    .questionLimitBox {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .questionLimitControls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
     }
 
     .settingsGrid {
@@ -296,7 +633,7 @@
       width: 16px;
       height: 16px;
       border-radius: 999px;
-      background: #fff;
+      background: var(--switch-thumb);
       box-shadow: 0 1px 4px rgba(0,0,0,.18);
       transition: transform .18s ease;
     }
@@ -304,13 +641,22 @@
     .checkline input:checked { background: var(--black); }
     .checkline input:checked::after { transform: translateX(16px); }
 
+    .checkline.settingDisabled {
+      opacity: .48;
+      cursor: not-allowed;
+    }
+
+    .checkline.settingDisabled input {
+      cursor: not-allowed;
+    }
+
     button {
       min-height: var(--touch);
       border: 0;
       border-radius: 14px;
       padding: 12px 15px;
       cursor: pointer;
-      color: #fff;
+      color: var(--on-black);
       background: var(--black);
       font-weight: 850;
       font-size: .95rem;
@@ -323,8 +669,9 @@
     button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.12); }
     button:active { transform: translateY(0); }
     button:disabled { opacity: .34; cursor: not-allowed; box-shadow: none; }
+
     button.secondary { background: #eceae8; color: var(--text); }
-    button.good { background: var(--black); color: #fff; }
+    button.good { background: var(--black); color: var(--on-black); }
     button.danger { background: var(--danger); color: white; }
     button.warn { background: #fff1c9; color: #6c4a00; }
 
@@ -390,11 +737,11 @@
 
     .questionText {
       max-width: 820px;
-      font-size: clamp(1.55rem, 2.6vw, 2.6rem);
-      font-weight: 900;
-      margin: 0 0 26px;
-      line-height: 1.08;
-      letter-spacing: -.045em;
+      font-size: clamp(1.2rem, 1.8vw, 1.55rem);
+      font-weight: 500;
+      margin: 0 0 22px;
+      line-height: 1.28;
+      letter-spacing: -.01em;
     }
 
     .options { display: grid; gap: 10px; }
@@ -435,15 +782,22 @@
 
     .option input[type="radio"] { border-radius: 999px; }
     .option input[type="checkbox"] { border-radius: 7px; }
-    .option input:checked { border-color: var(--black); background: var(--black); box-shadow: inset 0 0 0 5px #fff; }
+
+    .option input:checked {
+      border-color: var(--black);
+      background: var(--black);
+      box-shadow: inset 0 0 0 5px var(--surface);
+    }
+
     .option input[type="checkbox"]:checked { box-shadow: none; }
+
     .option input[type="checkbox"]:checked::after {
       content: "✓";
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      color: #fff;
+      color: var(--on-black);
       font-size: 14px;
       font-weight: 900;
     }
@@ -463,7 +817,11 @@
 
     .feedback.ok { display: block; border-color: #a9d9bf; background: var(--success-bg); }
     .feedback.no { display: block; border-color: #edc1bd; background: var(--danger-bg); }
-    .answerLine { margin-top: 8px; color: var(--muted-strong); }
+
+    .answerLine {
+      margin-top: 8px;
+      color: var(--muted-strong);
+    }
 
     .actions {
       display: flex;
@@ -499,7 +857,7 @@
       height: 72px;
       border-radius: 24px;
       background: var(--black);
-      color: #fff;
+      color: var(--on-black);
       font-size: 2rem;
       font-weight: 900;
       margin: 0 auto 14px;
@@ -545,6 +903,18 @@
           var(--bg);
       }
 
+      body.twilightTheme {
+        background:
+          radial-gradient(circle at 116% -6%, #38bdf8 0 8rem, transparent 8.1rem),
+          var(--bg);
+      }
+
+      body.darkTheme {
+        background:
+          radial-gradient(circle at 116% -6%, #f1f1f1 0 8rem, transparent 8.1rem),
+          var(--bg);
+      }
+
       .wrap {
         width: min(100% - 24px, 720px);
         padding-top: 22px;
@@ -558,11 +928,18 @@
 
       h1 { font-size: clamp(2.2rem, 11vw, 4rem); }
       .badge { justify-self: start; }
+      .headerTools { justify-content: flex-start; }
       .grid { grid-template-columns: 1fr; gap: 14px; }
       aside.card { position: static; }
       main.card { min-height: 0; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .questionText { font-size: clamp(1.45rem, 6.2vw, 2.1rem); }
+
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .questionText {
+        font-size: clamp(1.15rem, 4.8vw, 1.45rem);
+      }
 
       #quizBox .actions,
       #resultBox .actions {
@@ -593,41 +970,218 @@
       .option { padding: 13px 12px; border-radius: 15px; }
       .empty { min-height: 300px; padding: 26px 18px; }
       .primaryAction, .halfAction { flex-basis: 100%; }
+
+      .questionLimitControls {
+        grid-template-columns: 1fr;
+      }
+
       #quizBox .actions button,
-      #resultBox .actions button { flex-basis: 100%; }
+      #resultBox .actions button {
+        flex-basis: 100%;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      *, *::before, *::after {
+
+      *,
+      *::before,
+      *::after {
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
       }
     }
-  </style>
+  
+    /* === Visual sync requested: old UI palette on central theme + unified quiz typography === */
+    body.twilightTheme {
+      --bg: #0f172a;
+      --surface: #111827;
+      --surface-soft: #1f2937;
+      --surface-muted: #0b1220;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --muted-strong: #d1d5db;
+      --border: #334155;
+      --black: #38bdf8;
+      --on-black: #06121f;
+      --switch-thumb: #0f172a;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, .12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, .12);
+      --warn: #f59e0b;
+      --warn-bg: rgba(245, 158, 11, .12);
+      --shadow: 0 18px 45px rgba(0, 0, 0, .35);
+      --shadow-soft: 0 10px 28px rgba(0, 0, 0, .28);
+      background:
+        radial-gradient(circle at 112% -7%, #38bdf8 0 14rem, transparent 14.1rem),
+        radial-gradient(circle at 82% 9%, rgba(56, 189, 248, .16) 0 8rem, transparent 8.1rem),
+        var(--bg);
+    }
+
+    body.twilightTheme::before {
+      background: linear-gradient(110deg, transparent 0 73%, rgba(56, 189, 248, .055) 73% 74%, transparent 74%);
+    }
+
+    body.twilightTheme .card,
+    body.twilightTheme .badge {
+      background: linear-gradient(180deg, rgba(31, 41, 55, .96), rgba(17, 24, 39, .96));
+      border-color: var(--border);
+    }
+
+    body.twilightTheme aside section,
+    body.twilightTheme .stat,
+    body.twilightTheme .questionMeta,
+    body.twilightTheme .reviewItem,
+    body.twilightTheme .empty {
+      background: rgba(15, 23, 42, .70);
+      border-color: var(--border);
+    }
+
+    body.twilightTheme .questionLimitBox,
+    body.twilightTheme .checkline,
+    body.twilightTheme input[type="file"],
+    body.twilightTheme .option {
+      background: rgba(15, 23, 42, .72);
+      border-color: var(--border);
+    }
+
+    body.twilightTheme .option:hover {
+      background: rgba(15, 23, 42, .96);
+      border-color: rgba(56, 189, 248, .75);
+    }
+
+    body.twilightTheme .option input {
+      background: #0b1220;
+      border-color: #64748b;
+    }
+
+    body.twilightTheme .option input:checked {
+      background: var(--black);
+      border-color: var(--black);
+    }
+
+    body.twilightTheme input[type="file"]::file-selector-button {
+      background: var(--black);
+      color: var(--on-black);
+    }
+
+    body.twilightTheme button.secondary {
+      background: #334155;
+      color: var(--text);
+    }
+
+    body.twilightTheme button.warn {
+      background: var(--warn);
+      color: #111827;
+    }
+
+    body.twilightTheme .progressOuter {
+      background: #0b1220;
+      border: 1px solid var(--border);
+    }
+
+    body.twilightTheme .progressInner {
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+    }
+
+    body.twilightTheme .sectionNote,
+    body.twilightTheme .pill {
+      background: rgba(148, 163, 184, .16);
+      border-color: rgba(148, 163, 184, .24);
+      color: #cbd5e1;
+    }
+
+    /* Same typography for the actual Q&A area in all three themes. */
+    #quizBox,
+    #resultBox,
+    .questionMeta,
+    .questionText,
+    .options,
+    .option,
+    .feedback,
+    .answerLine,
+    .reviewItem {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .questionText {
+      font-size: clamp(1.15rem, 2vw, 1.6rem);
+      font-weight: 780;
+      line-height: 1.25;
+      letter-spacing: normal;
+    }
+
+    .option {
+      font-weight: 400;
+    }
+
+    .questionMeta {
+      font-weight: 800;
+    }
+</style>
 </head>
+
 <body>
   <div class="wrap">
+
     <header>
       <div>
         <div class="eyebrow">Study smarter</div>
         <h1>Quiz Trainer</h1>
-        <p class="sub">Quiz in HTML puro: importa un CSV, mischia domande e opzioni, rispondi dal browser e ricevi subito feedback corretto o sbagliato, in modo piu chiaro e ordinato.</p>
+        <p class="sub">
+          Quiz in HTML puro: importa un CSV, mischia domande e opzioni,
+          scegli quante domande allenare, rispondi dal browser e ricevi
+          subito feedback corretto o sbagliato.
+        </p>
       </div>
-      <div class="badge" id="questionCountBadge">0 domande caricate</div>
+
+      <div class="headerTools">
+        <div class="badge" id="questionCountBadge">
+          0 domande caricate
+        </div>
+
+        <button
+          class="themeToggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Attiva tema scuro"
+          title="Cambia tema"
+        >
+          <span class="themeTrack" aria-hidden="true">
+            <span>☀</span>
+            <span>◐</span>
+            <span>☾</span>
+          </span>
+          <span class="themeThumb" aria-hidden="true"></span>
+        </button>
+      </div>
     </header>
 
     <div class="grid">
+
       <aside class="card stack">
+
         <section>
           <div class="sectionHead">
             <h2>Importa il quiz</h2>
             <span class="sectionNote">CSV / JSON</span>
           </div>
-          <p class="tiny">Formato CSV: <span class="mono">source;question;options;correct;explanation</span>. Nelle opzioni usa <span class="mono">||</span>.</p>
-          <input type="file" id="fileInput" accept=".csv,.json,text/csv,application/json" />
+
+          <p class="tiny">
+            Formato CSV:
+            <span class="mono">source;question;options;correct;explanation</span>.
+            Nelle opzioni usa
+            <span class="mono">||</span>.
+          </p>
+
+          <input
+            type="file"
+            id="fileInput"
+            accept=".csv,.json,text/csv,application/json"
+          />
         </section>
 
         <section>
@@ -635,8 +1189,15 @@
             <h2>Incolla i dati</h2>
             <span class="sectionNote">Alternativa rapida</span>
           </div>
+
           <label for="pasteArea">Oppure incolla CSV qui</label>
-          <textarea id="pasteArea" spellcheck="false" placeholder='source;question;options;correct;explanation&#10;"Quiz";"Domanda";"A||B||C";"B";"Spiegazione"'></textarea>
+
+          <textarea
+            id="pasteArea"
+            spellcheck="false"
+            placeholder='source;question;options;correct;explanation&#10;"Quiz";"Domanda";"A||B||C";"B";"Spiegazione"'
+          ></textarea>
+
           <div class="row" style="margin-top:10px">
             <button id="loadPasteBtn">Carica CSV</button>
           </div>
@@ -647,62 +1208,155 @@
             <h2>Impostazioni</h2>
             <span class="sectionNote">Sessione</span>
           </div>
+
+          <div class="questionLimitBox">
+            <label for="questionLimit">Numero di domande</label>
+
+            <div class="questionLimitControls">
+              <select id="questionLimit">
+                <option value="10">10 domande</option>
+                <option value="20" selected>20 domande</option>
+                <option value="50">50 domande</option>
+                <option value="100">100 domande</option>
+                <option value="custom">A scelta</option>
+              </select>
+
+              <input
+                type="number"
+                id="customQuestionLimit"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="Numero"
+                class="hide"
+              />
+            </div>
+
+            <div class="tiny" id="questionLimitHint">
+              Se il numero scelto supera le domande disponibili,
+              verranno usate tutte.
+            </div>
+          </div>
+
           <div class="settingsGrid">
-            <label class="checkline"><span>Mischia domande</span><input type="checkbox" id="shuffleQuestions" checked /></label>
-            <label class="checkline"><span>Mischia opzioni</span><input type="checkbox" id="shuffleOptions" checked /></label>
-            <label class="checkline"><span>Feedback immediato automatico</span><input type="checkbox" id="instantFeedback" checked /></label>
-            <label class="checkline"><span>Ripeti solo errori dell’ultimo giro</span><input type="checkbox" id="onlyWrongMode" /></label>
+            <label class="checkline">
+              <span>Mischia domande</span>
+              <input type="checkbox" id="shuffleQuestions" checked />
+            </label>
+
+            <label class="checkline">
+              <span>Mischia opzioni</span>
+              <input type="checkbox" id="shuffleOptions" checked />
+            </label>
+
+            <label class="checkline">
+              <span>Feedback immediato automatico</span>
+              <input type="checkbox" id="instantFeedback" checked />
+            </label>
+
+            <label class="checkline" id="allowEditOnBackLine">
+              <span>Permetti modifica tornando indietro</span>
+              <input type="checkbox" id="allowEditOnBack" />
+            </label>
+
+            <label class="checkline">
+              <span>Ripeti solo errori dell’ultimo giro</span>
+              <input type="checkbox" id="onlyWrongMode" />
+            </label>
           </div>
         </section>
 
         <section class="row">
           <button class="good primaryAction" id="startBtn">Avvia quiz</button>
-          <button class="secondary halfAction" id="exportBtn" disabled>Esporta CSV</button>
-          <button class="secondary halfAction" id="resetBtn">Reset</button>
+
+          <button class="secondary halfAction" id="exportBtn" disabled>
+            Esporta CSV
+          </button>
+
+          <button class="secondary halfAction" id="resetBtn">
+            Reset
+          </button>
         </section>
+
       </aside>
 
       <main class="card">
+
         <div class="stats">
-          <div class="stat"><span class="tiny">Progresso</span><b id="statProgress">0/0</b></div>
-          <div class="stat"><span class="tiny">Corrette</span><b id="statCorrect">0</b></div>
-          <div class="stat"><span class="tiny">Sbagliate</span><b id="statWrong">0</b></div>
-          <div class="stat"><span class="tiny">Score</span><b id="statScore">0%</b></div>
+          <div class="stat">
+            <span class="tiny">Progresso</span>
+            <b id="statProgress">0/0</b>
+          </div>
+
+          <div class="stat">
+            <span class="tiny">Corrette</span>
+            <b id="statCorrect">0</b>
+          </div>
+
+          <div class="stat">
+            <span class="tiny">Sbagliate</span>
+            <b id="statWrong">0</b>
+          </div>
+
+          <div class="stat">
+            <span class="tiny">Score</span>
+            <b id="statScore">0%</b>
+          </div>
         </div>
-        <div class="progressOuter"><div class="progressInner" id="progressBar"></div></div>
+
+        <div class="progressOuter">
+          <div class="progressInner" id="progressBar"></div>
+        </div>
 
         <div id="emptyState" class="empty">
-Carica un CSV, poi avvia il quiz.
+          Carica un CSV, poi avvia il quiz.
         </div>
 
         <section id="quizBox" class="hide">
+
           <div class="questionMeta" id="questionMeta"></div>
           <div class="questionText" id="questionText"></div>
           <div class="options" id="optionsBox"></div>
           <div class="feedback" id="feedbackBox"></div>
+
           <div class="actions">
-            <button class="secondary" id="nextBtn" disabled>Prossima</button>
-            <button class="warn" id="finishBtn">Termina</button>
+            <button class="secondary" id="backBtn" disabled>
+              Indietro
+            </button>
+
+            <button class="secondary" id="nextBtn" disabled>
+              Prossima
+            </button>
+
+            <button class="warn" id="finishBtn">
+              Termina
+            </button>
           </div>
         </section>
 
         <section id="resultBox" class="hide">
           <h2>Risultato finale</h2>
+
           <p id="finalSummary"></p>
+
           <div class="actions">
-            <button class="good" id="restartBtn">Ricomincia</button>
-            <button class="secondary" id="wrongOnlyBtn">Allena solo errori</button>
+            <button class="good" id="restartBtn">
+              Ricomincia
+            </button>
+
+            <button class="secondary" id="wrongOnlyBtn">
+              Allena solo errori
+            </button>
           </div>
+
           <div id="reviewBox"></div>
         </section>
+
       </main>
     </div>
   </div>
 
   <script>
-
-    // Raccoglie in un solo oggetto i riferimenti agli elementi della pagina usati dal JavaScript.
-    // In questo modo il codice evita di ripetere continuamente document.getElementById(...).
     const els = {
       fileInput: document.getElementById('fileInput'),
       pasteArea: document.getElementById('pasteArea'),
@@ -710,11 +1364,17 @@ Carica un CSV, poi avvia il quiz.
       shuffleQuestions: document.getElementById('shuffleQuestions'),
       shuffleOptions: document.getElementById('shuffleOptions'),
       instantFeedback: document.getElementById('instantFeedback'),
+      allowEditOnBack: document.getElementById('allowEditOnBack'),
+      allowEditOnBackLine: document.getElementById('allowEditOnBackLine'),
       onlyWrongMode: document.getElementById('onlyWrongMode'),
+      questionLimit: document.getElementById('questionLimit'),
+      customQuestionLimit: document.getElementById('customQuestionLimit'),
+      questionLimitHint: document.getElementById('questionLimitHint'),
       startBtn: document.getElementById('startBtn'),
       exportBtn: document.getElementById('exportBtn'),
       resetBtn: document.getElementById('resetBtn'),
       questionCountBadge: document.getElementById('questionCountBadge'),
+      themeToggle: document.getElementById('themeToggle'),
       statProgress: document.getElementById('statProgress'),
       statCorrect: document.getElementById('statCorrect'),
       statWrong: document.getElementById('statWrong'),
@@ -727,6 +1387,7 @@ Carica un CSV, poi avvia il quiz.
       questionText: document.getElementById('questionText'),
       optionsBox: document.getElementById('optionsBox'),
       feedbackBox: document.getElementById('feedbackBox'),
+      backBtn: document.getElementById('backBtn'),
       nextBtn: document.getElementById('nextBtn'),
       finishBtn: document.getElementById('finishBtn'),
       finalSummary: document.getElementById('finalSummary'),
@@ -735,54 +1396,48 @@ Carica un CSV, poi avvia il quiz.
       reviewBox: document.getElementById('reviewBox')
     };
 
-    // Un solo oggetto contiene tutto lo stato modificabile dell'applicazione.
-    // I dati delle domande restano invece immutabili dopo l'importazione.
     const state = {
       status: 'empty',
       questionBank: [],
       quiz: [],
       currentIndex: 0,
       attempts: [],
+      answerStates: [],
       lastWrongQuestions: [],
       checkedCurrent: false
     };
 
-    /**
-     * Normalizza un valore testuale per confronti tolleranti.
-     * Converte null/undefined in stringa vuota, elimina gli spazi esterni,
-     * rimuove un eventuale BOM del CSV, comprime gli spazi consecutivi
-     * e trasforma tutto in minuscolo.
-     */
     function norm(s) {
-      return String(s ?? '').replace(/^\uFEFF/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+      return String(s ?? '')
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
     }
 
-    /**
-     * Converte i caratteri HTML pericolosi nelle rispettive entità.
-     * Serve quando una stringa proveniente dal CSV viene inserita tramite innerHTML,
-     * evitando che venga interpretata come markup o script eseguibile.
-     */
     function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+      return String(s ?? '').replace(
+        /[&<>"]/g,
+        ch => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;'
+        }[ch])
+      );
     }
 
-    /**
-     * Restituisce una nuova copia dell'array con gli elementi in ordine casuale.
-     * Usa l'algoritmo Fisher-Yates e non modifica l'array ricevuto.
-     */
     function shuffle(arr) {
       const a = [...arr];
+
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
+
       return a;
     }
 
-    /**
-     * Divide un campo CSV contenente più valori separati da "||".
-     * Ripulisce ogni valore e rimuove le parti vuote.
-     */
     function splitMulti(s) {
       return String(s || '')
         .split('||')
@@ -790,11 +1445,6 @@ Carica un CSV, poi avvia il quiz.
         .filter(Boolean);
     }
 
-    /**
-     * Analizza manualmente il testo CSV e restituisce una matrice di righe e celle.
-     * Gestisce il delimitatore configurabile, i campi racchiusi tra virgolette,
-     * le virgolette doppie di escape e le nuove righe presenti nei campi quotati.
-     */
     function parseCSV(text, delimiter = ';') {
       const rows = [];
       let row = [];
@@ -804,38 +1454,56 @@ Carica un CSV, poi avvia il quiz.
       for (let i = 0; i < text.length; i++) {
         const c = text[i];
         const next = text[i + 1];
+
         if (inQuotes) {
-          if (c === '"' && next === '"') { field += '"'; i++; }
-          else if (c === '"') { inQuotes = false; }
-          else { field += c; }
+          if (c === '"' && next === '"') {
+            field += '"';
+            i++;
+          } else if (c === '"') {
+            inQuotes = false;
+          } else {
+            field += c;
+          }
         } else {
-          if (c === '"') inQuotes = true;
-          else if (c === delimiter) { row.push(field); field = ''; }
-          else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-          else if (c === '\r') { /* ignore */ }
-          else { field += c; }
+          if (c === '"') {
+            inQuotes = true;
+          } else if (c === delimiter) {
+            row.push(field);
+            field = '';
+          } else if (c === '\n') {
+            row.push(field);
+            rows.push(row);
+            row = [];
+            field = '';
+          } else if (c === '\r') {
+          } else {
+            field += c;
+          }
         }
       }
-      if (inQuotes) throw new Error('CSV non valido: campo con virgolette non chiuse.');
+
+      if (inQuotes) {
+        throw new Error('CSV non valido: campo con virgolette non chiuse.');
+      }
+
       row.push(field);
       rows.push(row);
-      return rows.filter(r => r.some(cell => String(cell).trim() !== ''));
+
+      return rows.filter(
+        r => r.some(cell => String(cell).trim() !== '')
+      );
     }
 
-    /**
-     * Converte un valore singolo, una stringa con "||" o un array in una lista
-     * uniforme di stringhe non vuote.
-     */
     function toStringList(value) {
-      const values = Array.isArray(value) ? value : splitMulti(value);
-      return values.map(item => String(item ?? '').trim()).filter(Boolean);
+      const values = Array.isArray(value)
+        ? value
+        : splitMulti(value);
+
+      return values
+        .map(item => String(item ?? '').trim())
+        .filter(Boolean);
     }
 
-    /**
-     * Adatta e valida una domanda proveniente da qualsiasi formato.
-     * Restituisce un oggetto immutabile e sostituisce le risposte corrette
-     * con il testo esatto dell'opzione corrispondente.
-     */
     function normalizeQuestion(raw, position = 'Domanda') {
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
         throw new Error(`${position}: deve essere un oggetto.`);
@@ -848,32 +1516,68 @@ Carica un CSV, poi avvia il quiz.
       const suppliedCorrect = toStringList(raw.correct);
       const errors = [];
 
-      if (!question) errors.push('testo della domanda mancante.');
-      if (options.length < 2) errors.push('servono almeno due opzioni.');
-      if (!suppliedCorrect.length) errors.push('risposta corretta mancante.');
+      if (!question) {
+        errors.push('testo della domanda mancante.');
+      }
+
+      if (options.length < 2) {
+        errors.push('servono almeno due opzioni.');
+      }
+
+      if (!suppliedCorrect.length) {
+        errors.push('risposta corretta mancante.');
+      }
 
       const normalizedOptions = options.map(norm);
-      if (new Set(normalizedOptions).size !== normalizedOptions.length) {
+
+      if (
+        new Set(normalizedOptions).size !==
+        normalizedOptions.length
+      ) {
         errors.push('sono presenti opzioni duplicate.');
       }
 
       const canonicalCorrect = [];
+
       for (const answer of suppliedCorrect) {
-        const optionIndex = normalizedOptions.indexOf(norm(answer));
+        const optionIndex =
+          normalizedOptions.indexOf(
+            norm(answer)
+          );
+
         if (optionIndex === -1) {
-          errors.push(`la risposta corretta “${answer}” non compare tra le opzioni.`);
+          errors.push(
+            `la risposta corretta “${answer}” non compare tra le opzioni.`
+          );
         } else {
-          canonicalCorrect.push(options[optionIndex]);
+          canonicalCorrect.push(
+            options[optionIndex]
+          );
         }
       }
-      if (new Set(canonicalCorrect.map(norm)).size !== canonicalCorrect.length) {
+
+      if (
+        new Set(canonicalCorrect.map(norm)).size !==
+        canonicalCorrect.length
+      ) {
         errors.push('sono presenti risposte corrette duplicate.');
       }
 
-      if (errors.length) throw new Error(`${position}: ${errors.join(' ')}`);
+      if (errors.length) {
+        throw new Error(
+          `${position}: ${errors.join(' ')}`
+        );
+      }
 
       return Object.freeze({
-        id: raw.id ? String(raw.id) : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
+        id:
+          raw.id
+            ? String(raw.id)
+            : (
+                crypto.randomUUID
+                  ? crypto.randomUUID()
+                  : String(Date.now() + Math.random())
+              ),
         source,
         question,
         options: Object.freeze(options),
@@ -882,38 +1586,69 @@ Carica un CSV, poi avvia il quiz.
       });
     }
 
-    /**
-     * Normalizza un elenco di elementi senza bloccare l'intero import per una
-     * singola riga errata. Restituisce separatamente domande valide ed errori.
-     */
     function normalizeQuestions(items) {
       const questions = [];
       const errors = [];
+
       for (const item of items) {
         try {
-          questions.push(normalizeQuestion(item.data, item.position));
+          questions.push(
+            normalizeQuestion(
+              item.data,
+              item.position
+            )
+          );
         } catch (error) {
           errors.push(error.message);
         }
       }
-      return { questions, errors };
+
+      return {
+        questions,
+        errors
+      };
     }
 
-    /**
-     * Converte le righe CSV in elementi grezzi con indicazione della riga.
-     * La normalizzazione comune viene effettuata successivamente.
-     */
     function csvToRawQuestions(text) {
       const rows = parseCSV(text);
-      if (!rows.length) return [];
-      const header = rows[0].map(h => norm(h));
-      const hasHeader = ['source', 'question', 'options', 'correct'].every(h => header.includes(h));
-      const dataRows = hasHeader ? rows.slice(1) : rows;
 
-      const idx = name => hasHeader ? header.indexOf(name) : ({ source: 0, question: 1, options: 2, correct: 3, explanation: 4 }[name]);
+      if (!rows.length) {
+        return [];
+      }
+
+      const header = rows[0].map(h => norm(h));
+
+      const hasHeader =
+        ['source', 'question', 'options', 'correct']
+          .every(h => header.includes(h));
+
+      const dataRows =
+        hasHeader
+          ? rows.slice(1)
+          : rows;
+
+      const idx =
+        name =>
+          hasHeader
+            ? header.indexOf(name)
+            : ({
+                source: 0,
+                question: 1,
+                options: 2,
+                correct: 3,
+                explanation: 4
+              }[name]);
 
       return dataRows.map((r, index) => ({
-        position: `Riga ${index + (hasHeader ? 2 : 1)}`,
+        position:
+          `Riga ${
+            index +
+            (
+              hasHeader
+                ? 2
+                : 1
+            )
+          }`,
         data: {
           source: r[idx('source')],
           question: r[idx('question')],
@@ -924,94 +1659,330 @@ Carica un CSV, poi avvia il quiz.
       }));
     }
 
-    /**
-     * Serializza il modello interno delle domande in CSV.
-     * Quota ogni campo, raddoppia le virgolette interne e unisce opzioni/risposte con "||".
-     * Il risultato viene usato dal pulsante "Esporta CSV".
-     */
     function questionsToCSV(questions) {
-      const quote = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
-      const lines = ['source;question;options;correct;explanation'];
+      const quote =
+        s =>
+          '"' +
+          String(s ?? '').replace(/"/g, '""') +
+          '"';
+
+      const lines = [
+        'source;question;options;correct;explanation'
+      ];
+
       for (const q of questions) {
-        lines.push([
-          q.source,
-          q.question,
-          q.options.join('||'),
-          q.correct.join('||'),
-          q.explanation || ''
-        ].map(quote).join(';'));
+        lines.push(
+          [
+            q.source,
+            q.question,
+            q.options.join('||'),
+            q.correct.join('||'),
+            q.explanation || ''
+          ]
+            .map(quote)
+            .join(';')
+        );
       }
+
       return lines.join('\n');
     }
 
-    /**
-     * Salva il database delle domande nel browser. Un eventuale errore di quota
-     * non interrompe il quiz, ma viene restituito come avviso leggibile.
-     */
     function persistQuestions() {
       try {
-        localStorage.setItem('quizTrainerQuestions', JSON.stringify(state.questionBank));
+        localStorage.setItem(
+          'quizTrainerQuestions',
+          JSON.stringify(
+            state.questionBank
+          )
+        );
+
         return '';
       } catch {
         return ' Le domande funzionano, ma non è stato possibile salvarle nel browser.';
       }
     }
 
-    /**
-     * Sostituisce il database corrente, lo salva e mostra sia il risultato
-     * dell'importazione sia le eventuali righe scartate dalla validazione.
-     */
     function loadQuestions(questions, validationErrors = []) {
       state.questionBank = questions;
       state.quiz = [];
       state.currentIndex = 0;
       state.attempts = [];
+      state.answerStates = [];
       state.lastWrongQuestions = [];
       state.checkedCurrent = false;
+
       const storageWarning = persistQuestions();
+
       updateCount();
       resetStats();
-      const validationWarning = validationErrors.length
-        ? ` ${validationErrors.length === 1 ? 'Ignorata 1 riga non valida' : `Ignorate ${validationErrors.length} righe non valide`}: ${validationErrors.slice(0, 3).join(' | ')}${validationErrors.length > 3 ? ' | …' : ''}`
-        : '';
-      const loadedLabel = state.questionBank.length === 1 ? 'Caricata 1 domanda.' : `Caricate ${state.questionBank.length} domande.`;
-      setScreen('ready', `${loadedLabel} Premi “Avvia quiz”.${validationWarning}${storageWarning}`);
+
+      const validationWarning =
+        validationErrors.length
+          ? ` ${
+              validationErrors.length === 1
+                ? 'Ignorata 1 riga non valida'
+                : `Ignorate ${validationErrors.length} righe non valide`
+            }: ${
+              validationErrors
+                .slice(0, 3)
+                .join(' | ')
+            }${
+              validationErrors.length > 3
+                ? ' | …'
+                : ''
+            }`
+          : '';
+
+      const loadedLabel =
+        state.questionBank.length === 1
+          ? 'Caricata 1 domanda.'
+          : `Caricate ${state.questionBank.length} domande.`;
+
+      setScreen(
+        'ready',
+        `${loadedLabel} Premi “Avvia quiz”.${validationWarning}${storageWarning}`
+      );
     }
 
-    /**
-     * Importa domande da una stringa.
-     * Se il testo inizia con "[" o "{" prova a leggerlo come JSON; in tutti gli
-     * altri casi lo tratta come CSV. Alla fine valida il risultato e lo carica.
-     */
     function loadFromText(text) {
       let items;
+
       const trimmed = text.trim();
-      if (!trimmed) throw new Error('Testo vuoto.');
-      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+
+      if (!trimmed) {
+        throw new Error(
+          'Testo vuoto.'
+        );
+      }
+
+      if (
+        trimmed.startsWith('[') ||
+        trimmed.startsWith('{')
+      ) {
         const parsed = JSON.parse(trimmed);
-        const rawQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
-        if (!Array.isArray(rawQuestions)) throw new Error('JSON non valido: serve un array o { questions: [...] }.');
-        items = rawQuestions.map((data, index) => ({ data, position: `Elemento JSON ${index + 1}` }));
+
+        const rawQuestions =
+          Array.isArray(parsed)
+            ? parsed
+            : parsed.questions;
+
+        if (!Array.isArray(rawQuestions)) {
+          throw new Error(
+            'JSON non valido: serve un array o { questions: [...] }.'
+          );
+        }
+
+        items =
+          rawQuestions.map((data, index) => ({
+            data,
+            position:
+              `Elemento JSON ${index + 1}`
+          }));
       } else {
         items = csvToRawQuestions(trimmed);
       }
-      const { questions, errors } = normalizeQuestions(items);
+
+      const {
+        questions,
+        errors
+      } =
+        normalizeQuestions(items);
+
       if (!questions.length) {
-        const details = errors.slice(0, 3).join(' | ');
-        throw new Error(`Nessuna domanda valida trovata.${details ? ' ' + details : ' Controlla colonne e separatori.'}`);
+        const details =
+          errors.slice(0, 3).join(' | ');
+
+        throw new Error(
+          `Nessuna domanda valida trovata.${
+            details
+              ? ' ' + details
+              : ' Controlla colonne e separatori.'
+          }`
+        );
       }
-      loadQuestions(questions, errors);
+
+      loadQuestions(
+        questions,
+        errors
+      );
     }
 
-    /** Aggiorna il badge che mostra quante domande sono state caricate. */
+    function getCurrentTheme() {
+      if (
+        document.body.classList.contains(
+          'darkTheme'
+        )
+      ) {
+        return 'dark';
+      }
+
+      if (
+        document.body.classList.contains(
+          'twilightTheme'
+        )
+      ) {
+        return 'twilight';
+      }
+
+      return 'light';
+    }
+
+    function applyTheme(theme) {
+      const safeTheme =
+        ['light', 'twilight', 'dark']
+          .includes(theme)
+          ? theme
+          : 'light';
+
+      document.body.classList.toggle(
+        'twilightTheme',
+        safeTheme === 'twilight'
+      );
+
+      document.body.classList.toggle(
+        'darkTheme',
+        safeTheme === 'dark'
+      );
+
+      const nextTheme =
+        safeTheme === 'light'
+          ? 'crepuscolo'
+          : (
+              safeTheme === 'twilight'
+                ? 'scuro'
+                : 'chiaro'
+            );
+
+      const currentLabel =
+        safeTheme === 'light'
+          ? 'chiaro'
+          : (
+              safeTheme === 'twilight'
+                ? 'crepuscolo'
+                : 'scuro'
+            );
+
+      els.themeToggle.setAttribute(
+        'aria-label',
+        `Tema ${currentLabel}. Passa al tema ${nextTheme}`
+      );
+
+      els.themeToggle.setAttribute(
+        'title',
+        `Tema ${currentLabel} · clicca per ${nextTheme}`
+      );
+
+      els.themeToggle.dataset.theme =
+        safeTheme;
+
+      try {
+        localStorage.setItem(
+          'quizTrainerTheme',
+          safeTheme
+        );
+      } catch {
+      }
+    }
+
+    function toggleTheme() {
+      const current =
+        getCurrentTheme();
+
+      const next =
+        current === 'light'
+          ? 'twilight'
+          : (
+              current === 'twilight'
+                ? 'dark'
+                : 'light'
+            );
+
+      applyTheme(next);
+    }
+
+    function updateQuestionLimitUI() {
+      const isCustom =
+        els.questionLimit.value ===
+        'custom';
+
+      els.customQuestionLimit
+        .classList
+        .toggle(
+          'hide',
+          !isCustom
+        );
+
+      const available =
+        state.questionBank.length;
+
+      if (available) {
+        els.customQuestionLimit.max =
+          available;
+
+        els.questionLimitHint.textContent =
+          `Disponibili ${available} domande. Se scegli un numero maggiore, verranno usate tutte.`;
+      } else {
+        els.customQuestionLimit
+          .removeAttribute('max');
+
+        els.questionLimitHint.textContent =
+          'Se il numero scelto supera le domande disponibili, verranno usate tutte.';
+      }
+    }
+
+    function getRequestedQuestionCount(availableCount) {
+      let requested;
+
+      if (
+        els.questionLimit.value ===
+        'custom'
+      ) {
+        requested =
+          Number(
+            els.customQuestionLimit.value
+          );
+      } else {
+        requested =
+          Number(
+            els.questionLimit.value
+          );
+      }
+
+      if (
+        !Number.isInteger(requested) ||
+        requested < 1
+      ) {
+        showImportError(
+          'Inserisci un numero valido di domande.'
+        );
+
+        return null;
+      }
+
+      return Math.min(
+        requested,
+        availableCount
+      );
+    }
+
     function updateCount() {
-      const count = state.questionBank.length;
-      els.questionCountBadge.textContent = count === 1 ? '1 domanda caricata' : `${count} domande caricate`;
-      els.startBtn.disabled = count === 0;
-      els.exportBtn.disabled = count === 0;
+      const count =
+        state.questionBank.length;
+
+      els.questionCountBadge.textContent =
+        count === 1
+          ? '1 domanda caricata'
+          : `${count} domande caricate`;
+
+      els.startBtn.disabled =
+        count === 0;
+
+      els.exportBtn.disabled =
+        count === 0;
+
+      updateQuestionLimitUI();
     }
 
-    /** Riporta a zero contatori e barra di avanzamento visibili. */
     function resetStats() {
       els.statProgress.textContent = '0/0';
       els.statCorrect.textContent = '0';
@@ -1020,432 +1991,1474 @@ Carica un CSV, poi avvia il quiz.
       els.progressBar.style.width = '0%';
     }
 
-    /** Calcola tutte le statistiche con una sola scansione dei tentativi. */
     function calculateStats(attempts) {
-      const correct = attempts.reduce((count, attempt) => count + Number(attempt.isCorrect), 0);
-      const done = attempts.length;
+      const correct =
+        attempts.reduce(
+          (count, attempt) =>
+            count +
+            Number(attempt.isCorrect),
+          0
+        );
+
+      const done =
+        attempts.length;
+
       return {
         done,
         correct,
         wrong: done - correct,
-        pct: done ? Math.round((correct / done) * 100) : 0
+        pct:
+          done
+            ? Math.round(
+                (correct / done) * 100
+              )
+            : 0
       };
     }
 
-    /**
-     * Mostra progresso, risposte corrette, errori, percentuale e barra
-     * usando il risultato condiviso di calculateStats().
-     */
     function updateStats() {
-      const total = state.quiz.length;
-      const { done, correct, wrong, pct } = calculateStats(state.attempts);
-      els.statProgress.textContent = `${Math.min(state.currentIndex + (state.checkedCurrent ? 1 : 0), total)}/${total}`;
-      els.statCorrect.textContent = correct;
-      els.statWrong.textContent = wrong;
-      els.statScore.textContent = `${pct}%`;
-      els.progressBar.style.width = total ? `${Math.round((done / total) * 100)}%` : '0%';
+      const total =
+        state.quiz.length;
+
+      const {
+        done,
+        correct,
+        wrong,
+        pct
+      } =
+        calculateStats(
+          state.attempts
+        );
+
+      els.statProgress.textContent =
+        `${done}/${total}`;
+
+      els.statCorrect.textContent =
+        correct;
+
+      els.statWrong.textContent =
+        wrong;
+
+      els.statScore.textContent =
+        `${pct}%`;
+
+      els.progressBar.style.width =
+        total
+          ? `${
+              Math.round(
+                (done / total) * 100
+              )
+            }%`
+          : '0%';
     }
 
-    /**
-     * Applica in un solo punto lo stato visivo dell'applicazione.
-     * Gli stati possibili sono empty, ready, playing e finished.
-     */
     function setScreen(status, message = '') {
       state.status = status;
-      const showMessage = status === 'empty' || status === 'ready';
-      els.emptyState.classList.toggle('hide', !showMessage);
-      els.quizBox.classList.toggle('hide', status !== 'playing');
-      els.resultBox.classList.toggle('hide', status !== 'finished');
-      if (showMessage && message) els.emptyState.textContent = message;
+
+      const showMessage =
+        status === 'empty' ||
+        status === 'ready';
+
+      els.emptyState
+        .classList
+        .toggle(
+          'hide',
+          !showMessage
+        );
+
+      els.quizBox
+        .classList
+        .toggle(
+          'hide',
+          status !== 'playing'
+        );
+
+      els.resultBox
+        .classList
+        .toggle(
+          'hide',
+          status !== 'finished'
+        );
+
+      if (
+        showMessage &&
+        message
+      ) {
+        els.emptyState.textContent =
+          message;
+      }
     }
 
-    /** Mostra un errore senza perdere le domande già caricate. */
     function showImportError(message) {
-      setScreen(state.questionBank.length ? 'ready' : 'empty', message);
+      setScreen(
+        state.questionBank.length
+          ? 'ready'
+          : 'empty',
+        message
+      );
     }
 
-    /**
-     * Avvia una nuova sessione.
-     * Può usare tutte le domande oppure soltanto quelle sbagliate nell'ultimo giro,
-     * applica l'eventuale ordine casuale e azzera lo stato dei tentativi.
-     */
     function startQuiz(useWrongOnly = false) {
-      const base = useWrongOnly
-        ? state.lastWrongQuestions
-        : (els.onlyWrongMode.checked && state.lastWrongQuestions.length ? state.lastWrongQuestions : state.questionBank);
+      const base =
+        useWrongOnly
+          ? state.lastWrongQuestions
+          : (
+              els.onlyWrongMode.checked &&
+              state.lastWrongQuestions.length
+                ? state.lastWrongQuestions
+                : state.questionBank
+            );
+
       if (!base.length) {
-        showImportError('Non ci sono domande da avviare. Carica un CSV prima.');
+        showImportError(
+          'Non ci sono domande da avviare. Carica un CSV prima.'
+        );
+
         return;
       }
-      const orderedQuestions = els.shuffleQuestions.checked ? shuffle(base) : [...base];
-      state.quiz = orderedQuestions.map(question => Object.freeze({
-        question,
-        renderedOptions: Object.freeze(els.shuffleOptions.checked ? shuffle(question.options) : [...question.options])
-      }));
+
+      const questionCount =
+        getRequestedQuestionCount(
+          base.length
+        );
+
+      if (
+        questionCount === null
+      ) {
+        return;
+      }
+
+      const orderedQuestions =
+        els.shuffleQuestions.checked
+          ? shuffle(base)
+          : [...base];
+
+      const selectedQuestions =
+        orderedQuestions.slice(
+          0,
+          questionCount
+        );
+
+      state.quiz =
+        selectedQuestions.map(
+          question =>
+            Object.freeze({
+              question,
+              renderedOptions:
+                Object.freeze(
+                  els.shuffleOptions.checked
+                    ? shuffle(
+                        question.options
+                      )
+                    : [...question.options]
+                )
+            })
+        );
+
       state.currentIndex = 0;
       state.attempts = [];
+
+      state.answerStates =
+        state.quiz.map(
+          () => ({
+            selected: [],
+            checked: false,
+            attempt: null,
+            feedbackShown: false
+          })
+        );
+
       state.checkedCurrent = false;
+
       setScreen('playing');
+
       renderQuestion();
       updateStats();
-      if (window.matchMedia('(max-width: 850px)').matches) {
-        requestAnimationFrame(() => els.quizBox.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+
+      if (
+        window.matchMedia(
+          '(max-width: 850px)'
+        ).matches
+      ) {
+        requestAnimationFrame(
+          () =>
+            els.quizBox
+              .scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              })
+        );
       }
     }
 
-    /** Restituisce l'elemento di sessione corrente senza modificare la domanda originale. */
     function currentQuizItem() {
-      return state.quiz[state.currentIndex];
+      return state.quiz[
+        state.currentIndex
+      ];
     }
 
-    /** Crea l'elemento HTML di una risposta senza usare stringhe HTML dinamiche. */
     function createOptionElement(option, index, multi) {
-      const id = `opt_${state.currentIndex}_${index}`;
-      const label = document.createElement('label');
-      const input = document.createElement('input');
-      const text = document.createElement('span');
-      const letter = document.createElement('b');
+      const id =
+        `opt_${state.currentIndex}_${index}`;
+
+      const label =
+        document.createElement(
+          'label'
+        );
+
+      const input =
+        document.createElement(
+          'input'
+        );
+
+      const text =
+        document.createElement(
+          'span'
+        );
+
+      const letter =
+        document.createElement(
+          'b'
+        );
 
       label.className = 'option';
-      input.type = multi ? 'checkbox' : 'radio';
+
+      input.type =
+        multi
+          ? 'checkbox'
+          : 'radio';
+
       input.name = 'answer';
       input.value = option;
       input.id = id;
-      letter.textContent = `${String.fromCharCode(65 + index)}. `;
-      text.append(letter, document.createTextNode(option));
-      label.append(input, text);
+
+      letter.textContent =
+        `${String.fromCharCode(
+          65 + index
+        )}. `;
+
+      text.append(
+        letter,
+        document.createTextNode(
+          option
+        )
+      );
+
+      label.append(
+        input,
+        text
+      );
+
       return label;
     }
 
-    /**
-     * Disegna nel DOM la domanda corrente e le relative opzioni.
-     * Sceglie radio button per risposta singola e checkbox per risposta multipla,
-     * collega l'evento change e ripristina feedback e pulsanti.
-     */
-    function renderQuestion() {
-      state.checkedCurrent = false;
-      const item = currentQuizItem();
-      const q = item.question;
-      const multi = q.correct.length > 1;
-      els.questionMeta.textContent = `${q.source || 'Quiz'} · domanda ${state.currentIndex + 1} di ${state.quiz.length}${multi ? ' · risposta multipla' : ''}`;
-      els.questionText.textContent = q.question;
-      els.optionsBox.replaceChildren();
-      els.feedbackBox.className = 'feedback';
-      els.feedbackBox.replaceChildren();
-      els.nextBtn.textContent = els.instantFeedback.checked && multi ? 'Controlla' : 'Prossima';
-      els.nextBtn.disabled = true;
+    function getSelectedAnswers() {
+      return [
+        ...els.optionsBox
+          .querySelectorAll(
+            'input[name="answer"]:checked'
+          )
+      ].map(
+        x => x.value
+      );
+    }
 
-      const fragment = document.createDocumentFragment();
-      item.renderedOptions.forEach((option, index) => {
-        fragment.appendChild(createOptionElement(option, index, multi));
-      });
-      els.optionsBox.appendChild(fragment);
+    function lockCurrentOptions() {
+      [
+        ...els.optionsBox
+          .querySelectorAll(
+            'input[name="answer"]'
+          )
+      ].forEach(
+        input => {
+          input.disabled = true;
+        }
+      );
+    }
+
+    function renderAttemptFeedback(attempt) {
+      const q = attempt.question;
+
+      const correctNorm =
+        new Set(
+          q.correct.map(norm)
+        );
+
+      const selectedNorm =
+        new Set(
+          attempt.selected.map(norm)
+        );
+
+      [
+        ...els.optionsBox
+          .querySelectorAll(
+            '.option'
+          )
+      ].forEach(
+        label => {
+          const input =
+            label.querySelector(
+              'input'
+            );
+
+          const value = input.value;
+          const normalized = norm(value);
+
+          if (
+            correctNorm.has(
+              normalized
+            )
+          ) {
+            label.classList.add(
+              'correct'
+            );
+          }
+
+          if (
+            selectedNorm.has(
+              normalized
+            ) &&
+            !correctNorm.has(
+              normalized
+            )
+          ) {
+            label.classList.add(
+              'wrong'
+            );
+          }
+
+          if (
+            !selectedNorm.has(
+              normalized
+            ) &&
+            correctNorm.has(
+              normalized
+            ) &&
+            !attempt.isCorrect
+          ) {
+            label.classList.add(
+              'missed'
+            );
+          }
+
+          input.disabled = true;
+        }
+      );
+
+      els.feedbackBox.className =
+        'feedback ' +
+        (
+          attempt.isCorrect
+            ? 'ok'
+            : 'no'
+        );
+
+      els.feedbackBox.innerHTML =
+        `
+          <b>
+            ${
+              attempt.isCorrect
+                ? 'Corretto.'
+                : 'Sbagliato.'
+            }
+          </b>
+
+          <div class="answerLine">
+            <b>Risposta corretta:</b>
+            ${
+              q.correct
+                .map(escapeHtml)
+                .join(' + ')
+            }
+          </div>
+
+          ${
+            q.explanation
+              ? `
+                <div class="answerLine">
+                  <b>Spiegazione:</b>
+                  ${
+                    escapeHtml(
+                      q.explanation
+                    )
+                  }
+                </div>
+              `
+              : ''
+          }
+        `;
+    }
+
+    function saveCurrentDraft() {
+      if (
+        state.status !== 'playing' ||
+        !state.quiz.length ||
+        !state.answerStates[
+          state.currentIndex
+        ]
+      ) {
+        return;
+      }
+
+      const saved =
+        state.answerStates[
+          state.currentIndex
+        ];
+
+      if (state.checkedCurrent) {
+        return;
+      }
+
+      saved.selected =
+        getSelectedAnswers();
+    }
+
+    function canEditCheckedAnswer(saved) {
+      return Boolean(
+        saved &&
+        saved.checked &&
+        !els.instantFeedback.checked &&
+        els.allowEditOnBack.checked
+      );
+    }
+
+    function updateEditOnBackAvailability() {
+      const disabled = els.instantFeedback.checked;
+
+      if (disabled) {
+        els.allowEditOnBack.checked = false;
+      }
+
+      els.allowEditOnBack.disabled = disabled;
+      els.allowEditOnBackLine.classList.toggle(
+        'settingDisabled',
+        disabled
+      );
+    }
+
+    function renderQuestion() {
+      const item =
+        currentQuizItem();
+
+      if (!item) {
+        return;
+      }
+
+      const q = item.question;
+      const multi =
+        q.correct.length > 1;
+
+      const saved =
+        state.answerStates[
+          state.currentIndex
+        ] || {
+          selected: [],
+          checked: false,
+          attempt: null,
+          feedbackShown: false
+        };
+
+      state.answerStates[
+        state.currentIndex
+      ] = saved;
+
+      const editableCheckedAnswer =
+        canEditCheckedAnswer(saved);
+
+      state.checkedCurrent =
+        saved.checked &&
+        !editableCheckedAnswer;
+
+      els.questionMeta.textContent =
+        `${q.source || 'Quiz'} · domanda ${state.currentIndex + 1} di ${state.quiz.length}${
+          multi
+            ? ' · risposta multipla'
+            : ''
+        }`;
+
+      els.questionText.textContent =
+        q.question;
+
+      els.optionsBox
+        .replaceChildren();
+
+      els.feedbackBox.className =
+        'feedback';
+
+      els.feedbackBox
+        .replaceChildren();
+
+      const fragment =
+        document.createDocumentFragment();
+
+      item.renderedOptions
+        .forEach(
+          (option, index) => {
+            fragment.appendChild(
+              createOptionElement(
+                option,
+                index,
+                multi
+              )
+            );
+          }
+        );
+
+      els.optionsBox
+        .appendChild(
+          fragment
+        );
+
+      const selectedNorm =
+        new Set(
+          saved.selected.map(norm)
+        );
+
+      [
+        ...els.optionsBox
+          .querySelectorAll(
+            'input[name="answer"]'
+          )
+      ].forEach(
+        input => {
+          input.checked =
+            selectedNorm.has(
+              norm(
+                input.value
+              )
+            );
+        }
+      );
+
+      els.backBtn.disabled =
+        state.currentIndex === 0;
+
+      if (
+        saved.checked &&
+        !editableCheckedAnswer
+      ) {
+        els.nextBtn.textContent =
+          state.currentIndex ===
+          state.quiz.length - 1
+            ? 'Risultato'
+            : 'Prossima';
+
+        els.nextBtn.disabled = false;
+
+        if (
+          saved.feedbackShown &&
+          saved.attempt
+        ) {
+          renderAttemptFeedback(
+            saved.attempt
+          );
+        } else {
+          lockCurrentOptions();
+        }
+      } else {
+        els.nextBtn.textContent =
+          els.instantFeedback.checked &&
+          multi
+            ? 'Controlla'
+            : (
+                state.currentIndex ===
+                state.quiz.length - 1
+                  ? 'Risultato'
+                  : 'Prossima'
+              );
+
+        els.nextBtn.disabled =
+          saved.selected.length === 0;
+
+        if (
+          els.instantFeedback.checked &&
+          !multi &&
+          saved.selected.length &&
+          !saved.checked
+        ) {
+          const questionIndex =
+            state.currentIndex;
+
+          window.setTimeout(
+            () => {
+              if (
+                state.currentIndex ===
+                questionIndex &&
+                !state.checkedCurrent
+              ) {
+                recordAnswer({
+                  showFeedback: true
+                });
+              }
+            },
+            80
+          );
+        }
+      }
+
       updateStats();
     }
 
-    /** Restituisce i valori di tutte le opzioni attualmente selezionate. */
-    function getSelectedAnswers() {
-      return [...els.optionsBox.querySelectorAll('input[name="answer"]:checked')].map(x => x.value);
-    }
-
-    /**
-     * Reagisce alla selezione o deselezione di un'opzione.
-     * Le risposte singole possono essere corrette automaticamente. Per quelle
-     * multiple abilita "Controlla", lasciando il tempo di modificare tutte le scelte.
-     */
     function handleAnswerChange() {
-      if (state.checkedCurrent) return;
+      if (
+        state.checkedCurrent
+      ) {
+        return;
+      }
 
-      const q = currentQuizItem().question;
-      const selected = getSelectedAnswers();
-      const hasSelection = selected.length > 0;
+      const q =
+        currentQuizItem()
+          .question;
+
+      const selected =
+        getSelectedAnswers();
+
+      const saved =
+        state.answerStates[
+          state.currentIndex
+        ];
+
+      if (saved) {
+        saved.selected =
+          [...selected];
+      }
+
+      const hasSelection =
+        selected.length > 0;
 
       if (!hasSelection) {
         els.nextBtn.disabled = true;
         return;
       }
 
-      if (els.instantFeedback.checked) {
-        if (q.correct.length === 1) {
-          // Per una risposta singola il click rappresenta già una scelta completa.
+      if (
+        els.instantFeedback.checked
+      ) {
+        if (
+          q.correct.length === 1
+        ) {
           els.nextBtn.disabled = true;
-          window.setTimeout(() => {
-            if (!state.checkedCurrent) recordAnswer({ showFeedback: true });
-          }, 80);
+
+          const questionIndex =
+            state.currentIndex;
+
+          window.setTimeout(
+            () => {
+              if (
+                state.currentIndex ===
+                questionIndex &&
+                !state.checkedCurrent
+              ) {
+                recordAnswer({
+                  showFeedback: true
+                });
+              }
+            },
+            80
+          );
         } else {
-          // Nelle multiple l'utente decide quando ha finito premendo "Controlla".
           els.nextBtn.disabled = false;
         }
       } else {
-        // La risposta verrà salvata quando si preme "Prossima" o "Termina".
-        els.feedbackBox.className = 'feedback';
-        els.feedbackBox.replaceChildren();
+        els.feedbackBox.className =
+          'feedback';
+
+        els.feedbackBox
+          .replaceChildren();
+
         els.nextBtn.disabled = false;
       }
     }
 
-    /**
-     * Confronta due array come insiemi di stringhe normalizzate.
-     * L'ordine non conta, mentre devono coincidere numero e contenuto degli elementi.
-     */
     function sameSet(a, b) {
-      const aa = a.map(norm).sort();
-      const bb = b.map(norm).sort();
-      return aa.length === bb.length && aa.every((v, i) => v === bb[i]);
+      const aa =
+        a.map(norm).sort();
+
+      const bb =
+        b.map(norm).sort();
+
+      return (
+        aa.length === bb.length &&
+        aa.every(
+          (v, i) =>
+            v === bb[i]
+        )
+      );
     }
 
-    /** Crea il risultato di un tentativo senza leggere o modificare il DOM. */
     function evaluateAnswer(question, selected) {
       return Object.freeze({
         question,
-        selected: Object.freeze([...selected]),
-        isCorrect: sameSet(selected, question.correct)
+        selected:
+          Object.freeze(
+            [...selected]
+          ),
+        isCorrect:
+          sameSet(
+            selected,
+            question.correct
+          )
       });
     }
 
-    /**
-     * Registra la risposta corrente e ne calcola la correttezza.
-     * Se richiesto, colora le opzioni, blocca gli input e mostra soluzione e spiegazione.
-     * Restituisce false se non è stata selezionata alcuna risposta, true negli altri casi.
-     */
-    function recordAnswer({ showFeedback = true } = {}) {
-      if (state.checkedCurrent) return true;
-      const q = currentQuizItem().question;
-      const selected = getSelectedAnswers();
+    function recordAnswer({
+      showFeedback = true
+    } = {}) {
+      if (
+        state.checkedCurrent
+      ) {
+        return true;
+      }
+
+      const q =
+        currentQuizItem()
+          .question;
+
+      const selected =
+        getSelectedAnswers();
+
       if (!selected.length) {
-        els.feedbackBox.className = 'feedback no';
-        els.feedbackBox.innerHTML = '<b>Seleziona almeno una risposta.</b>';
+        els.feedbackBox.className =
+          'feedback no';
+
+        els.feedbackBox.innerHTML =
+          '<b>Seleziona almeno una risposta.</b>';
+
         els.nextBtn.disabled = true;
+
         return false;
       }
 
-      const attempt = evaluateAnswer(q, selected);
-      state.checkedCurrent = true;
-      state.attempts.push(attempt);
+      const evaluated =
+        evaluateAnswer(
+          q,
+          selected
+        );
 
-      if (showFeedback) {
-        const correctNorm = new Set(q.correct.map(norm));
-        const selectedNorm = new Set(selected.map(norm));
-        [...els.optionsBox.querySelectorAll('.option')].forEach(label => {
-          const val = label.querySelector('input').value;
-          const n = norm(val);
-          if (correctNorm.has(n)) label.classList.add('correct');
-          if (selectedNorm.has(n) && !correctNorm.has(n)) label.classList.add('wrong');
-          if (!selectedNorm.has(n) && correctNorm.has(n) && !attempt.isCorrect) label.classList.add('missed');
-          label.querySelector('input').disabled = true;
+      const attempt =
+        Object.freeze({
+          ...evaluated,
+          quizIndex:
+            state.currentIndex
         });
 
-        els.feedbackBox.className = 'feedback ' + (attempt.isCorrect ? 'ok' : 'no');
-        els.feedbackBox.innerHTML = `
-          <b>${attempt.isCorrect ? 'Corretto.' : 'Sbagliato.'}</b>
-          <div class="answerLine"><b>Risposta corretta:</b> ${q.correct.map(escapeHtml).join(' + ')}</div>
-          ${q.explanation ? `<div class="answerLine"><b>Spiegazione:</b> ${escapeHtml(q.explanation)}</div>` : ''}
-        `;
+      const existingAttemptIndex =
+        state.attempts
+          .findIndex(
+            item =>
+              item.quizIndex ===
+              state.currentIndex
+          );
+
+      if (
+        existingAttemptIndex >= 0
+      ) {
+        state.attempts[
+          existingAttemptIndex
+        ] = attempt;
+      } else {
+        state.attempts.push(
+          attempt
+        );
       }
 
-      els.nextBtn.textContent = 'Prossima';
+      const saved =
+        state.answerStates[
+          state.currentIndex
+        ];
+
+      saved.selected =
+        [...selected];
+
+      saved.checked = true;
+      saved.attempt = attempt;
+      saved.feedbackShown =
+        showFeedback;
+
+      state.checkedCurrent = true;
+
+      if (
+        showFeedback
+      ) {
+        renderAttemptFeedback(
+          attempt
+        );
+      } else {
+        lockCurrentOptions();
+      }
+
+      els.nextBtn.textContent =
+        state.currentIndex ===
+        state.quiz.length - 1
+          ? 'Risultato'
+          : 'Prossima';
+
       els.nextBtn.disabled = false;
+
       updateStats();
+
       return true;
     }
 
-    /**
-     * Gestisce il pulsante "Prossima" e il tasto Invio.
-     * Prima salva una risposta non ancora registrata, poi avanza alla domanda seguente
-     * oppure termina il quiz se si trova sull'ultima.
-     */
-    function nextQuestion() {
-      if (!state.checkedCurrent) {
-        const saved = recordAnswer({ showFeedback: els.instantFeedback.checked });
-        if (!saved) return;
-
-        // Con feedback immediato il primo click corregge, il secondo avanza.
-        if (els.instantFeedback.checked) return;
+    function previousQuestion() {
+      if (
+        state.status !== 'playing' ||
+        state.currentIndex <= 0
+      ) {
+        return;
       }
 
-      if (state.currentIndex < state.quiz.length - 1) {
+      saveCurrentDraft();
+
+      state.currentIndex--;
+
+      renderQuestion();
+    }
+
+    function nextQuestion() {
+      if (
+        !state.checkedCurrent
+      ) {
+        const saved =
+          recordAnswer({
+            showFeedback:
+              els.instantFeedback.checked
+          });
+
+        if (!saved) {
+          return;
+        }
+
+        if (
+          els.instantFeedback.checked
+        ) {
+          return;
+        }
+      }
+
+      if (
+        state.currentIndex <
+        state.quiz.length - 1
+      ) {
         state.currentIndex++;
+
         renderQuestion();
       } else {
         finishQuiz();
       }
     }
 
-    /**
-     * Chiude la sessione, calcola il riepilogo finale, salva le domande sbagliate
-     * per il ripasso e mostra la revisione dettagliata dei tentativi.
-     */
     function finishQuiz() {
-      // Registra anche una risposta multipla parziale se l'utente termina subito.
-      if (state.quiz.length && !state.checkedCurrent && state.currentIndex < state.quiz.length && getSelectedAnswers().length) {
-        recordAnswer({ showFeedback: false });
+      if (
+        state.quiz.length &&
+        !state.checkedCurrent &&
+        state.currentIndex <
+          state.quiz.length &&
+        getSelectedAnswers().length
+      ) {
+        recordAnswer({
+          showFeedback: false
+        });
       }
-      setScreen('finished');
 
-      const { done, correct, wrong, pct } = calculateStats(state.attempts);
-      state.lastWrongQuestions = state.attempts.filter(attempt => !attempt.isCorrect).map(attempt => attempt.question);
-      els.finalSummary.innerHTML = `Hai risposto a <b>${done}</b> domande su <b>${state.quiz.length}</b>. Corrette: <b>${correct}</b>. Sbagliate: <b>${wrong}</b>. Score: <b>${pct}%</b>.`;
-      els.wrongOnlyBtn.disabled = state.lastWrongQuestions.length === 0;
+      setScreen(
+        'finished'
+      );
+
+      const {
+        done,
+        correct,
+        wrong,
+        pct
+      } =
+        calculateStats(
+          state.attempts
+        );
+
+      state.lastWrongQuestions =
+        state.attempts
+          .filter(
+            attempt =>
+              !attempt.isCorrect
+          )
+          .map(
+            attempt =>
+              attempt.question
+          );
+
+      els.finalSummary.innerHTML =
+        `
+          Hai risposto a
+          <b>${done}</b>
+          domande su
+          <b>${state.quiz.length}</b>.
+          Corrette:
+          <b>${correct}</b>.
+          Sbagliate:
+          <b>${wrong}</b>.
+          Score:
+          <b>${pct}%</b>.
+        `;
+
+      els.wrongOnlyBtn.disabled =
+        state.lastWrongQuestions.length ===
+        0;
+
       renderReview();
       updateStats();
-      if (window.matchMedia('(max-width: 850px)').matches) {
-        requestAnimationFrame(() => els.resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+
+      if (
+        window.matchMedia(
+          '(max-width: 850px)'
+        ).matches
+      ) {
+        requestAnimationFrame(
+          () =>
+            els.resultBox
+              .scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              })
+        );
       }
     }
 
-    /**
-     * Costruisce l'elenco finale di tutte le risposte registrate.
-     * Per ciascun tentativo mostra esito, risposta dell'utente, soluzione e spiegazione.
-     */
     function renderReview() {
-      els.reviewBox.replaceChildren();
-      if (!state.attempts.length) {
-        els.reviewBox.innerHTML = '<div class="empty">Nessuna risposta registrata.</div>';
+      els.reviewBox
+        .replaceChildren();
+
+      if (
+        !state.attempts.length
+      ) {
+        els.reviewBox.innerHTML =
+          '<div class="empty">Nessuna risposta registrata.</div>';
+
         return;
       }
-      const fragment = document.createDocumentFragment();
-      state.attempts.forEach((a, i) => {
-        const div = document.createElement('div');
-        div.className = 'reviewItem ' + (a.isCorrect ? 'goodborder' : 'badborder');
-        div.innerHTML = `
-          <div class="tiny">${escapeHtml(a.question.source)} · #${i + 1}</div>
-          <h3>${escapeHtml(a.question.question)}</h3>
-          <div><span class="pill">${a.isCorrect ? 'corretta' : 'sbagliata'}</span></div>
-          <p><b>Tua risposta:</b> ${a.selected.map(escapeHtml).join(' + ') || '—'}</p>
-          <p><b>Corretta:</b> ${a.question.correct.map(escapeHtml).join(' + ')}</p>
-          ${a.question.explanation ? `<p class="tiny"><b>Spiegazione:</b> ${escapeHtml(a.question.explanation)}</p>` : ''}
-        `;
-        fragment.appendChild(div);
-      });
-      els.reviewBox.appendChild(fragment);
+
+      const fragment =
+        document.createDocumentFragment();
+
+      const orderedAttempts =
+        [...state.attempts]
+          .sort(
+            (a, b) =>
+              a.quizIndex -
+              b.quizIndex
+          );
+
+      orderedAttempts.forEach(
+        (a, i) => {
+          const div =
+            document.createElement(
+              'div'
+            );
+
+          div.className =
+            'reviewItem ' +
+            (
+              a.isCorrect
+                ? 'goodborder'
+                : 'badborder'
+            );
+
+          div.innerHTML =
+            `
+              <div class="tiny">
+                ${
+                  escapeHtml(
+                    a.question.source
+                  )
+                }
+                · #${i + 1}
+              </div>
+
+              <h3>
+                ${
+                  escapeHtml(
+                    a.question.question
+                  )
+                }
+              </h3>
+
+              <div>
+                <span class="pill">
+                  ${
+                    a.isCorrect
+                      ? 'corretta'
+                      : 'sbagliata'
+                  }
+                </span>
+              </div>
+
+              <p>
+                <b>Tua risposta:</b>
+                ${
+                  a.selected
+                    .map(
+                      escapeHtml
+                    )
+                    .join(' + ') ||
+                  '—'
+                }
+              </p>
+
+              <p>
+                <b>Corretta:</b>
+                ${
+                  a.question.correct
+                    .map(
+                      escapeHtml
+                    )
+                    .join(' + ')
+                }
+              </p>
+
+              ${
+                a.question.explanation
+                  ? `
+                    <p class="tiny">
+                      <b>Spiegazione:</b>
+                      ${
+                        escapeHtml(
+                          a.question.explanation
+                        )
+                      }
+                    </p>
+                  `
+                  : ''
+              }
+            `;
+
+          fragment.appendChild(
+            div
+          );
+        }
+      );
+
+      els.reviewBox
+        .appendChild(
+          fragment
+        );
     }
 
-    /**
-     * Crea e scarica dal browser un file generato in memoria tramite Blob.
-     * Viene utilizzata dal pulsante "Esporta CSV".
-     */
-    function downloadFile(name, content, type = 'text/plain') {
-      const blob = new Blob([content], { type });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+    function downloadFile(
+      name,
+      content,
+      type = 'text/plain'
+    ) {
+      const blob =
+        new Blob(
+          [content],
+          { type }
+        );
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+      const a =
+        document.createElement(
+          'a'
+        );
+
       a.href = url;
       a.download = name;
-      document.body.appendChild(a);
+
+      document.body
+        .appendChild(
+          a
+        );
+
       a.click();
       a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+
+      window.setTimeout(
+        () =>
+          URL.revokeObjectURL(
+            url
+          ),
+        0
+      );
     }
 
-    // Un solo listener sul contenitore gestisce tutte le opzioni presenti e future.
-    els.optionsBox.addEventListener('change', event => {
-      if (event.target.matches('input[name="answer"]')) handleAnswerChange();
-    });
+    els.optionsBox
+      .addEventListener(
+        'change',
+        event => {
+          if (
+            event.target.matches(
+              'input[name="answer"]'
+            )
+          ) {
+            handleAnswerChange();
+          }
+        }
+      );
 
-    // Importa il contenuto incollato nel textarea e mostra un errore leggibile se non è valido.
-    els.loadPasteBtn.addEventListener('click', () => {
-      try { loadFromText(els.pasteArea.value); }
-      catch (e) { showImportError('Errore caricamento: ' + e.message); }
-    });
+    els.loadPasteBtn
+      .addEventListener(
+        'click',
+        () => {
+          try {
+            loadFromText(
+              els.pasteArea.value
+            );
+          } catch (e) {
+            showImportError(
+              'Errore caricamento: ' +
+              e.message
+            );
+          }
+        }
+      );
 
-    // Legge in modo asincrono il file scelto, ne copia il contenuto nel textarea e lo importa.
-    els.fileInput.addEventListener('change', async (ev) => {
-      const file = ev.target.files[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        els.pasteArea.value = text;
-        loadFromText(text);
-      } catch (e) {
-        showImportError('Errore file: ' + e.message);
-      }
-    });
+    els.fileInput
+      .addEventListener(
+        'change',
+        async ev => {
+          const file =
+            ev.target.files[0];
 
-    // Collega i pulsanti principali alle rispettive operazioni.
-    els.startBtn.addEventListener('click', () => startQuiz(false));
-    els.exportBtn.addEventListener('click', () => {
-      const csv = '\uFEFF' + questionsToCSV(state.questionBank);
-      downloadFile('quiz-trainer-export.csv', csv, 'text/csv;charset=utf-8');
-    });
+          if (!file) {
+            return;
+          }
 
-    // Il reset elimina stato in memoria e domande persistenti, quindi ripristina l'interfaccia.
-    els.resetBtn.addEventListener('click', () => {
-      state.questionBank = [];
-      state.quiz = [];
-      state.currentIndex = 0;
-      state.attempts = [];
-      state.lastWrongQuestions = [];
-      state.checkedCurrent = false;
-      els.pasteArea.value = '';
-      els.fileInput.value = '';
-      try { localStorage.removeItem('quizTrainerQuestions'); } catch { /* storage non disponibile */ }
-      updateCount();
-      resetStats();
-      setScreen('empty', 'Reset fatto. Carica un CSV, poi avvia il quiz.');
-    });
-    els.nextBtn.addEventListener('click', nextQuestion);
-    els.finishBtn.addEventListener('click', finishQuiz);
-    els.restartBtn.addEventListener('click', () => startQuiz(false));
-    els.wrongOnlyBtn.addEventListener('click', () => startQuiz(true));
+          try {
+            const text =
+              await file.text();
 
-    // Se l'impostazione cambia durante una risposta multipla, aggiorna subito il pulsante.
-    els.instantFeedback.addEventListener('change', () => {
-      if (state.status !== 'playing' || state.checkedCurrent) return;
-      const item = currentQuizItem();
-      if (!item) return;
-      const multi = item.question.correct.length > 1;
-      els.nextBtn.textContent = els.instantFeedback.checked && multi ? 'Controlla' : 'Prossima';
-      els.nextBtn.disabled = getSelectedAnswers().length === 0;
-    });
+            els.pasteArea.value =
+              text;
 
-    // Scorciatoie: i tasti 1-9 selezionano un'opzione, Invio salva/avanza.
-    document.addEventListener('keydown', (e) => {
-      if (els.quizBox.classList.contains('hide')) return;
-      if (/^[1-9]$/.test(e.key)) {
-        const inputs = [...els.optionsBox.querySelectorAll('input[name="answer"]')];
-        const idx = Number(e.key) - 1;
-        if (inputs[idx] && !inputs[idx].disabled) {
-          if (inputs[idx].type === 'radio') inputs[idx].checked = true;
-          else inputs[idx].checked = !inputs[idx].checked;
-          handleAnswerChange();
+            loadFromText(
+              text
+            );
+          } catch (e) {
+            showImportError(
+              'Errore file: ' +
+              e.message
+            );
+          }
+        }
+      );
+
+    els.themeToggle
+      .addEventListener(
+        'click',
+        toggleTheme
+      );
+
+    els.questionLimit
+      .addEventListener(
+        'change',
+        () => {
+          updateQuestionLimitUI();
+
+          if (
+            els.questionLimit.value ===
+              'custom' &&
+            !els.customQuestionLimit.value
+          ) {
+            els.customQuestionLimit
+              .focus();
+          }
+        }
+      );
+
+    els.startBtn
+      .addEventListener(
+        'click',
+        () =>
+          startQuiz(false)
+      );
+
+    els.exportBtn
+      .addEventListener(
+        'click',
+        () => {
+          const csv =
+            '\uFEFF' +
+            questionsToCSV(
+              state.questionBank
+            );
+
+          downloadFile(
+            'quiz-trainer-export.csv',
+            csv,
+            'text/csv;charset=utf-8'
+          );
+        }
+      );
+
+    els.resetBtn
+      .addEventListener(
+        'click',
+        () => {
+          state.questionBank = [];
+          state.quiz = [];
+          state.currentIndex = 0;
+          state.attempts = [];
+          state.answerStates = [];
+          state.lastWrongQuestions = [];
+          state.checkedCurrent = false;
+
+          els.pasteArea.value = '';
+          els.fileInput.value = '';
+
+          try {
+            localStorage.removeItem(
+              'quizTrainerQuestions'
+            );
+          } catch {
+          }
+
+          updateCount();
+          resetStats();
+
+          setScreen(
+            'empty',
+            'Reset fatto. Carica un CSV, poi avvia il quiz.'
+          );
+        }
+      );
+
+    els.backBtn
+      .addEventListener(
+        'click',
+        previousQuestion
+      );
+
+    els.nextBtn
+      .addEventListener(
+        'click',
+        nextQuestion
+      );
+
+    els.finishBtn
+      .addEventListener(
+        'click',
+        finishQuiz
+      );
+
+    els.restartBtn
+      .addEventListener(
+        'click',
+        () =>
+          startQuiz(false)
+      );
+
+    els.wrongOnlyBtn
+      .addEventListener(
+        'click',
+        () =>
+          startQuiz(true)
+      );
+
+    els.instantFeedback
+      .addEventListener(
+        'change',
+        () => {
+          saveCurrentDraft();
+          updateEditOnBackAvailability();
+
+          if (
+            state.status !==
+            'playing'
+          ) {
+            return;
+          }
+
+          renderQuestion();
+        }
+      );
+
+    els.allowEditOnBack
+      .addEventListener(
+        'change',
+        () => {
+          saveCurrentDraft();
+
+          if (
+            state.status ===
+            'playing'
+          ) {
+            renderQuestion();
+          }
+        }
+      );
+
+    document.addEventListener(
+      'keydown',
+      e => {
+        if (
+          els.quizBox
+            .classList
+            .contains('hide')
+        ) {
+          return;
+        }
+
+        if (
+          /^[1-9]$/.test(
+            e.key
+          )
+        ) {
+          const inputs =
+            [
+              ...els.optionsBox
+                .querySelectorAll(
+                  'input[name="answer"]'
+                )
+            ];
+
+          const idx =
+            Number(e.key) - 1;
+
+          if (
+            inputs[idx] &&
+            !inputs[idx].disabled
+          ) {
+            if (
+              inputs[idx].type ===
+              'radio'
+            ) {
+              inputs[idx].checked =
+                true;
+            } else {
+              inputs[idx].checked =
+                !inputs[idx].checked;
+            }
+
+            handleAnswerChange();
+          }
+        }
+
+        if (
+          e.key === 'Enter'
+        ) {
+          e.preventDefault();
+          nextQuestion();
+        }
+
+        if (
+          e.key ===
+          'ArrowLeft'
+        ) {
+          e.preventDefault();
+          previousQuestion();
         }
       }
-      if (e.key === 'Enter') {
-        nextQuestion();
-      }
-    });
+    );
 
-    /**
-     * Inizializzazione eseguita immediatamente al caricamento della pagina.
-     * Azzera le statistiche e tenta di ripristinare dal localStorage le domande
-     * precedentemente importate nello stesso browser.
-     */
     (function init() {
       resetStats();
+
+      let initialTheme = 'light';
+
       try {
-        const saved = JSON.parse(localStorage.getItem('quizTrainerQuestions') || '[]');
-        if (Array.isArray(saved) && saved.length) {
-          const items = saved.map((data, index) => ({ data, position: `Domanda salvata ${index + 1}` }));
-          const { questions, errors } = normalizeQuestions(items);
-          state.questionBank = questions;
+        const savedTheme =
+          localStorage.getItem(
+            'quizTrainerTheme'
+          );
+
+        if (
+          savedTheme === 'dark' ||
+          savedTheme === 'twilight' ||
+          savedTheme === 'light'
+        ) {
+          initialTheme = savedTheme;
+        } else if (
+          window.matchMedia &&
+          window.matchMedia(
+            '(prefers-color-scheme: dark)'
+          ).matches
+        ) {
+          initialTheme = 'dark';
+        }
+      } catch {
+      }
+
+      applyTheme(initialTheme);
+      updateEditOnBackAvailability();
+
+      try {
+        const saved =
+          JSON.parse(
+            localStorage.getItem(
+              'quizTrainerQuestions'
+            ) || '[]'
+          );
+
+        if (
+          Array.isArray(saved) &&
+          saved.length
+        ) {
+          const items =
+            saved.map(
+              (data, index) => ({
+                data,
+                position:
+                  `Domanda salvata ${index + 1}`
+              })
+            );
+
+          const {
+            questions,
+            errors
+          } =
+            normalizeQuestions(
+              items
+            );
+
+          state.questionBank =
+            questions;
+
           updateCount();
-          if (questions.length) {
-            const warning = errors.length
-              ? ` ${errors.length === 1 ? 'Ignorata 1 domanda salvata non valida.' : `Ignorate ${errors.length} domande salvate non valide.`}`
-              : '';
-            const restoredLabel = questions.length === 1
-              ? 'Ripristinata 1 domanda salvata nel browser.'
-              : `Ripristinate ${questions.length} domande salvate nel browser.`;
-            setScreen('ready', `${restoredLabel} Premi “Avvia quiz”.${warning}`);
+
+          if (
+            questions.length
+          ) {
+            const warning =
+              errors.length
+                ? ` ${
+                    errors.length === 1
+                      ? 'Ignorata 1 domanda salvata non valida.'
+                      : `Ignorate ${errors.length} domande salvate non valide.`
+                  }`
+                : '';
+
+            const restoredLabel =
+              questions.length === 1
+                ? 'Ripristinata 1 domanda salvata nel browser.'
+                : `Ripristinate ${questions.length} domande salvate nel browser.`;
+
+            setScreen(
+              'ready',
+              `${restoredLabel} Premi “Avvia quiz”.${warning}`
+            );
           } else {
-            setScreen('empty', 'Le domande salvate non sono valide. Carica nuovamente il CSV.');
+            setScreen(
+              'empty',
+              'Le domande salvate non sono valide. Carica nuovamente il CSV.'
+            );
           }
         } else {
           updateCount();
-          setScreen('empty', 'Carica un CSV, poi avvia il quiz.');
+
+          setScreen(
+            'empty',
+            'Carica un CSV, poi avvia il quiz.'
+          );
         }
       } catch {
         updateCount();
-        setScreen('empty', 'Non è stato possibile leggere le domande salvate. Carica nuovamente il CSV.');
+
+        setScreen(
+          'empty',
+          'Non è stato possibile leggere le domande salvate. Carica nuovamente il CSV.'
+        );
       }
     })();
   </script>
